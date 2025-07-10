@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const count_req_path = `${__dirname}/count_req.json`;
+const count_req_path = path.join(__dirname, 'count_req.json');
 const notesDir = path.join(__dirname, 'note');
 let count_req_data = {};
 
@@ -19,10 +19,11 @@ const count_req_save = () => {
 
 const api = [];
 
-if (!fs.existsSync(count_req_path)) count_req_save();
-else {
+if (!fs.existsSync(count_req_path)) {
+    count_req_save();
+} else {
     try {
-        count_req_data = require(count_req_path);
+        count_req_data = JSON.parse(fs.readFileSync(count_req_path, 'utf8'));
     } catch (e) {
         console.error(`Failed to load count_req_data: ${e.message}`);
     }
@@ -37,15 +38,19 @@ app.set('json spaces', 4);
 app.use(cors());
 app.use(express.json());
 
-fs.readdirSync('./api').forEach(file => {
+fs.readdirSync(path.join(__dirname, 'api')).forEach(file => {
     try {
-        let file_import = require(`./api/${file}`);
-        if (!count_req_data[file_import.info.path]) count_req_data[file_import.info.path] = 0;
-        if (!/^\/$/.test(file_import.info.path)) api.push(file_import.info);
+        const file_import = require(path.join(__dirname, 'api', file));
+        if (!count_req_data[file_import.info.path]) {
+            count_req_data[file_import.info.path] = 0;
+        }
+        if (!/^\/$/.test(file_import.info.path)) {
+            api.push(file_import.info);
+        }
 
         Object.keys(file_import.methods).forEach(method => {
             app[method](file_import.info.path, (req, res, next) => {
-                ++count_req_data[file_import.info.path];
+                count_req_data[file_import.info.path]++;
                 file_import.methods[method](req, res, next);
                 count_req_save();
             });
@@ -73,7 +78,7 @@ app.get('/recent', (req, res) => {
                 };
             })
             .sort((a, b) => fs.statSync(path.join(notesDir, `${b.uuid}.txt`)).mtime - fs.statSync(path.join(notesDir, `${a.uuid}.txt`)).mtime)
-            .slice(0, 6); // Limit to 6 recent notes
+            .slice(0, 6);
         res.json(notes);
     } catch (e) {
         console.error(`Failed to fetch recent notes: ${e.message}`);
