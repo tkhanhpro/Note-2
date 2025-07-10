@@ -64,7 +64,7 @@ module.exports = {
                         <style>
                             body {
                                 font-family: 'Inter', sans-serif;
-                                background-color: #1a202c;
+                                background: linear-gradient(180deg, #1a3c34 0%, #0a0a0a 100%);
                                 animation: fadeIn 0.6s ease-in-out;
                                 color: #f9f6ef;
                             }
@@ -73,26 +73,36 @@ module.exports = {
                                 to { opacity: 1; }
                             }
                             @keyframes gradientShift {
-                                0% { border-color: #fce7ec; }
-                                50% { border-color: #e6f3ff; }
-                                100% { border-color: #fce7ec; }
+                                0% { border-color: #1a3c34; }
+                                50% { border-color: #4fd1c5; }
+                                100% { border-color: #1a3c34; }
                             }
                             nav {
-                                background: rgba(255, 255, 255, 0.1);
+                                background: rgba(255, 255, 255, 0.05);
                                 backdrop-filter: blur(12px);
                                 border-bottom: 1px solid rgba(226, 232, 240, 0.2);
                             }
+                            .header-container {
+                                display: flex;
+                                justify-content: space-between;
+                                align-items: center;
+                                max-width: 6xl;
+                                margin: 0 auto;
+                                padding: 1rem;
+                            }
                             .action-button {
-                                background-color: #fce7ec;
-                                color: #1a202c;
+                                background: rgba(255, 255, 255, 0.05);
+                                color: #f9f6ef;
                                 transition: all 0.3s ease;
                                 border: 2px solid transparent;
                                 animation: gradientShift 10s ease infinite;
                                 font-weight: 500;
                                 letter-spacing: 0.025em;
+                                padding: 0.5rem 1rem;
+                                border-radius: 0.5rem;
                             }
                             .action-button:hover {
-                                background-color: #f8c1cc;
+                                background: #4fd1c5;
                                 transform: scale(1.03);
                                 box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
                             }
@@ -101,21 +111,21 @@ module.exports = {
                                 border-radius: 0.75rem;
                                 overflow: hidden;
                                 border: 2px solid transparent;
-                                background: rgba(255, 255, 255, 0.1);
+                                background: rgba(255, 255, 255, 0.05);
                                 backdrop-filter: blur(12px);
                                 animation: gradientShift 10s ease infinite;
                                 box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+                                margin-top: 1rem;
                             }
                             .line-numbers {
                                 counter-reset: line;
-                                padding: 1rem;
-                                background: #2b2a33;
-                                color: #fce7ec;
+                                padding: 1rem 0.5rem;
+                                background: #1a202c;
+                                color: #f9f6ef;
                                 text-align: right;
-                                border-right: 1px solid #e2e8f0;
-                                min-width: 3.5rem;
+                                min-width: 2.5rem;
                                 font-family: 'Fira Code', monospace;
-                                font-size: 1rem;
+                                font-size: 0.875rem;
                                 line-height: 1.5;
                             }
                             .line-numbers div {
@@ -131,13 +141,13 @@ module.exports = {
                             }
                             textarea {
                                 font-family: 'Fira Code', monospace;
-                                background: #2b2a33;
+                                background: #1a202c;
                                 color: #f8f8f2;
                                 border: none;
                                 outline: none;
                                 resize: both;
                                 width: 100%;
-                                min-height: 80vh;
+                                min-height: 85vh;
                                 max-height: 90vh;
                                 max-width: 100%;
                                 padding: 1rem;
@@ -150,17 +160,17 @@ module.exports = {
                                 width: 8px;
                             }
                             textarea::-webkit-scrollbar-thumb {
-                                background: #fce7ec;
+                                background: linear-gradient(180deg, #1a3c34, #4fd1c5);
                                 border-radius: 4px;
                             }
                             textarea::-webkit-scrollbar-track {
-                                background: #2b2a33;
+                                background: #1a202c;
                             }
                             textarea:focus {
-                                box-shadow: 0 0 0 3px #e6f3ff;
+                                box-shadow: 0 0 0 3px #4fd1c5;
                             }
                             .status {
-                                background: rgba(255, 255, 255, 0.1);
+                                background: rgba(255, 255, 255, 0.05);
                                 backdrop-filter: blur(12px);
                                 padding: 0.5rem 1rem;
                                 border-radius: 0.5rem;
@@ -176,28 +186,28 @@ module.exports = {
                             .status.saved { color: #b4f8c8; }
                             .status.error { color: #ff6b6b; }
                             footer {
-                                background: rgba(255, 255, 255, 0.1);
+                                background: rgba(255, 255, 255, 0.05);
+                                backdrop-filter: blur(12px);
                                 color: #f9f6ef;
                             }
                         </style>
                     </head>
                     <body class="min-h-screen flex flex-col">
                         <nav class="p-4">
-                            <div class="max-w-6xl mx-auto flex justify-between items-center">
-                                <h1 class="text-xl font-semibold">Note by TKhanh</h1>
-                                <a href="/settings" class="action-button px-4 py-1.5 rounded-md text-sm font-medium">Settings</a>
+                            <div class="header-container">
+                                <h1 class="text-lg font-semibold">Note Editor</h1>
+                                <p id="status" class="status saved">Đã lưu</p>
                             </div>
                         </nav>
                         <main class="flex-grow max-w-6xl mx-auto p-4">
-                            <p id="status" class="status saved text-sm mb-4">Đã lưu</p>
                             <div class="editor-container">
                                 <div class="line-numbers"></div>
-                                <textarea id="editor" class="flex-1" placeholder="Start typing your note...">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                                <textarea id="editor" class="flex-1" placeholder="Start typing your note...">${text.replace(/</g, '<').replace(/>/g, '>')}</textarea>
                             </div>
                         </main>
                         <footer class="p-4">
                             <div class="max-w-6xl mx-auto text-center text-sm">
-                                © 2025 Note App by TKhanh - Inspired by Nakano Miku
+                                End
                             </div>
                         </footer>
                         <script>
@@ -243,7 +253,7 @@ module.exports = {
                                     updateLines();
                                     hljs.highlightElement(input);
                                     input.addEventListener('input', () => {
-                                        status.textContent = 'Đang nhập';
+                                        status.textContent = 'Chưa lưu';
                                         status.className = 'status typing';
                                         if (putTimeout) clearTimeout(putTimeout);
                                         putTimeout = setTimeout(() => put(), 1000);
