@@ -60,12 +60,13 @@ module.exports = {
                         <script src="https://cdn.tailwindcss.com"></script>
                         <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/dracula.min.css">
                         <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-                        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Fira+Code:wght@400&display=swap" rel="stylesheet">
+                        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
                         <style>
                             body {
                                 font-family: 'Inter', sans-serif;
-                                background-color: #f9f6ef;
+                                background-color: #1a202c;
                                 animation: fadeIn 0.6s ease-in-out;
+                                color: #f9f6ef;
                             }
                             @keyframes fadeIn {
                                 from { opacity: 0; }
@@ -77,31 +78,33 @@ module.exports = {
                                 100% { border-color: #fce7ec; }
                             }
                             nav {
-                                background: rgba(255, 255, 255, 0.8);
-                                backdrop-filter: blur(8px);
-                                border-bottom: 1px solid #e2e8f0;
+                                background: rgba(255, 255, 255, 0.1);
+                                backdrop-filter: blur(12px);
+                                border-bottom: 1px solid rgba(226, 232, 240, 0.2);
                             }
                             .action-button {
                                 background-color: #fce7ec;
-                                color: #4a5568;
-                                transition: all 0.2s ease;
+                                color: #1a202c;
+                                transition: all 0.3s ease;
                                 border: 2px solid transparent;
                                 animation: gradientShift 10s ease infinite;
+                                font-weight: 500;
+                                letter-spacing: 0.025em;
                             }
                             .action-button:hover {
                                 background-color: #f8c1cc;
-                                transform: scale(1.02);
-                                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+                                transform: scale(1.03);
+                                box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
                             }
                             .editor-container {
                                 display: flex;
-                                border-radius: 0.5rem;
+                                border-radius: 0.75rem;
                                 overflow: hidden;
                                 border: 2px solid transparent;
-                                background: rgba(255, 255, 255, 0.9);
-                                backdrop-filter: blur(8px);
+                                background: rgba(255, 255, 255, 0.1);
+                                backdrop-filter: blur(12px);
                                 animation: gradientShift 10s ease infinite;
-                                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+                                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
                             }
                             .line-numbers {
                                 counter-reset: line;
@@ -110,12 +113,21 @@ module.exports = {
                                 color: #fce7ec;
                                 text-align: right;
                                 border-right: 1px solid #e2e8f0;
-                                min-width: 3rem;
+                                min-width: 3.5rem;
+                                font-family: 'Fira Code', monospace;
+                                font-size: 1rem;
+                                line-height: 1.5;
+                            }
+                            .line-numbers div {
+                                min-height: 1.5rem;
+                                display: flex;
+                                align-items: center;
+                                justify-content: flex-end;
+                                padding-right: 0.5rem;
                             }
                             .line-numbers div:before {
                                 counter-increment: line;
                                 content: counter(line);
-                                display: block;
                             }
                             textarea {
                                 font-family: 'Fira Code', monospace;
@@ -123,46 +135,65 @@ module.exports = {
                                 color: #f8f8f2;
                                 border: none;
                                 outline: none;
-                                resize: none;
-                                white-space: pre;
-                                overflow-wrap: normal;
+                                resize: both;
+                                width: 100%;
+                                min-height: 80vh;
+                                max-height: 90vh;
+                                max-width: 100%;
+                                padding: 1rem;
+                                font-size: 1rem;
+                                line-height: 1.5;
                                 scroll-behavior: smooth;
-                                min-height: 70vh;
-                                font-size: 0.875rem;
+                                overflow: auto;
+                            }
+                            textarea::-webkit-scrollbar {
+                                width: 8px;
+                            }
+                            textarea::-webkit-scrollbar-thumb {
+                                background: #fce7ec;
+                                border-radius: 4px;
+                            }
+                            textarea::-webkit-scrollbar-track {
+                                background: #2b2a33;
                             }
                             textarea:focus {
-                                box-shadow: 0 0 0 2px #e6f3ff;
+                                box-shadow: 0 0 0 3px #e6f3ff;
                             }
                             .status {
-                                background: rgba(255, 255, 255, 0.8);
+                                background: rgba(255, 255, 255, 0.1);
+                                backdrop-filter: blur(12px);
                                 padding: 0.5rem 1rem;
                                 border-radius: 0.5rem;
+                                border: 2px solid transparent;
+                                animation: gradientShift 10s ease infinite;
                                 font-size: 0.875rem;
-                                color: #4a5568;
+                                color: #f9f6ef;
+                                font-weight: 500;
+                                letter-spacing: 0.025em;
                             }
                             .status.typing { color: #f8c1cc; }
                             .status.saving { color: #a3bffa; }
                             .status.saved { color: #b4f8c8; }
                             .status.error { color: #ff6b6b; }
                             footer {
-                                background-color: #e6f3ff;
-                                color: #4a5568;
+                                background: rgba(255, 255, 255, 0.1);
+                                color: #f9f6ef;
                             }
                         </style>
                     </head>
                     <body class="min-h-screen flex flex-col">
                         <nav class="p-4">
                             <div class="max-w-6xl mx-auto flex justify-between items-center">
-                                <h1 class="text-xl font-semibold text-gray-800">Note by TKhanh</h1>
-                                <a href="/" class="action-button px-4 py-1.5 rounded-md text-sm font-medium">Home</a>
+                                <h1 class="text-xl font-semibold">Note by TKhanh</h1>
+                                <a href="/settings" class="action-button px-4 py-1.5 rounded-md text-sm font-medium">Settings</a>
                             </div>
                         </nav>
                         <main class="flex-grow max-w-6xl mx-auto p-4">
+                            <p id="status" class="status saved text-sm mb-4">Đã lưu</p>
                             <div class="editor-container">
                                 <div class="line-numbers"></div>
-                                <textarea id="editor" class="flex-1 p-4 text-sm" placeholder="Start typing your note...">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+                                <textarea id="editor" class="flex-1" placeholder="Start typing your note...">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
                             </div>
-                            <p id="status" class="status saved text-sm mt-2">Đã lưu</p>
                         </main>
                         <footer class="p-4">
                             <div class="max-w-6xl mx-auto text-center text-sm">
@@ -175,7 +206,7 @@ module.exports = {
                             const status = document.querySelector('#status');
 
                             function updateLines() {
-                                const texts = input.value.split('\\n');
+                                const texts = input.value.split(/\\r?\\n/);
                                 lines.innerHTML = texts.map((_, i) => \`<div>\${i + 1}</div>\`).join('');
                             }
 
