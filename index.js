@@ -17,15 +17,15 @@ const count_req_save = () => {
     }
 };
 
-const api = [];
-
 if (!fs.existsSync(count_req_path)) {
     count_req_save();
 } else {
     try {
-        count_req_data = JSON.parse(fs.readFileSync(count_req_path, 'utf8'));
+        const data = fs.readFileSync(count_req_path, 'utf8');
+        count_req_data = JSON.parse(data);
     } catch (e) {
         console.error(`Failed to load count_req_data: ${e.message}`);
+        count_req_data = {};
     }
 }
 
@@ -38,9 +38,16 @@ app.set('json spaces', 4);
 app.use(cors());
 app.use(express.json());
 
-fs.readdirSync(path.join(__dirname, 'api')).forEach(file => {
+const api = [];
+const apiDir = path.join(__dirname, 'api');
+
+fs.readdirSync(apiDir).forEach(file => {
     try {
-        const file_import = require(path.join(__dirname, 'api', file));
+        const filePath = path.join(apiDir, file);
+        const file_import = require(filePath);
+        if (!file_import.info || !file_import.info.path) {
+            throw new Error('Invalid API module: missing info or path');
+        }
         if (!count_req_data[file_import.info.path]) {
             count_req_data[file_import.info.path] = 0;
         }
@@ -57,7 +64,7 @@ fs.readdirSync(path.join(__dirname, 'api')).forEach(file => {
         });
         console.log(`Loaded API: ${file}`);
     } catch (e) {
-        console.error(`Load fail: ${file} - Error: ${e.message}`);
+        console.error(`Failed to load API ${file}: ${e.message}`);
     }
 });
 
@@ -70,7 +77,8 @@ app.get('/recent', (req, res) => {
         const notes = fs.readdirSync(notesDir)
             .filter(file => file.endsWith('.txt') && !file.endsWith('.raw.txt'))
             .map(file => {
-                const content = fs.readFileSync(path.join(notesDir, file), 'utf8');
+                const filePath = path.join(notesDir, file);
+                const content = fs.readFileSync(filePath, 'utf8');
                 return {
                     uuid: file.replace('.txt', ''),
                     title: content.split('\n')[0].slice(0, 50) || 'Untitled Note',
