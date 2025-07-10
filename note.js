@@ -95,7 +95,7 @@ module.exports = {
     </style>
 </head>
 <body>
-    <h3>Note By NinoKawai</h3>
+    <h3>Note By TKhanh</h3>
     <h6>Sau khi chỉnh sửa thay đổi hãy đợi 1s để upload data</h6>
     <div id="content">
         <div>
