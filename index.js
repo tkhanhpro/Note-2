@@ -5,49 +5,36 @@ const fs = require('fs');
 const path = require('path');
 
 const app = express();
-const count_req_path = path.join(__dirname, 'count_req.json');
-const notesDir = path.join(__dirname, 'note');
+const count_req_path = `${__dirname}/count_req.json`;
 let count_req_data = {};
 
-const count_req_save = () => {
-    try {
-        fs.writeFileSync(count_req_path, JSON.stringify(count_req_data, null, 2), 'utf8');
-    } catch (e) {
-        console.error(`Failed to save count_req_data: ${e.message}`);
-    }
-};
+const count_req_save = () => fs.writeFileSync(count_req_path, JSON.stringify(count_req_data, null, 2), 'utf8');
+const api = [];
 
+// Initialize request counter
 if (!fs.existsSync(count_req_path)) {
     count_req_save();
 } else {
     try {
-        const data = fs.readFileSync(count_req_path, 'utf8');
-        count_req_data = JSON.parse(data);
+        count_req_data = require(count_req_path);
     } catch (e) {
-        console.error(`Failed to load count_req_data: ${e.message}`);
+        console.log('Error loading count_req.json, creating new one');
         count_req_data = {};
+        count_req_save();
     }
 }
 
-if (!fs.existsSync(notesDir)) {
-    fs.mkdirSync(notesDir, { recursive: true });
-}
-
+// Setup WebSocket and middleware
 ews(app);
 app.set('json spaces', 4);
 app.use(cors());
 app.use(express.json());
+app.use(express.text());
 
-const api = [];
-const apiDir = path.join(__dirname, 'api');
-
-fs.readdirSync(apiDir).forEach(file => {
+// Load API routes dynamically
+fs.readdirSync('./api').forEach(file => {
     try {
-        const filePath = path.join(apiDir, file);
-        const file_import = require(filePath);
-        if (!file_import.info || !file_import.info.path) {
-            throw new Error('Invalid API module: missing info or path');
-        }
+        let file_import = require(`./api/${file}`);
         if (!count_req_data[file_import.info.path]) {
             count_req_data[file_import.info.path] = 0;
         }
@@ -57,44 +44,61 @@ fs.readdirSync(apiDir).forEach(file => {
 
         Object.keys(file_import.methods).forEach(method => {
             app[method](file_import.info.path, (req, res, next) => {
-                count_req_data[file_import.info.path]++;
+                ++count_req_data[file_import.info.path];
                 file_import.methods[method](req, res, next);
                 count_req_save();
             });
         });
-        console.log(`Loaded API: ${file}`);
+        
+        console.log(`✅ Loaded API: ${file_import.info.path} (${Object.keys(file_import.methods).join(', ').toUpperCase()})`);
     } catch (e) {
-        console.error(`Failed to load API ${file}: ${e.message}`);
+        console.log(`❌ Load fail: ${file}`);
+        console.log(e);
     }
 });
 
+// Serve the enhanced index.html
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'index.html'));
+    res.sendFile(path.join(__dirname, "index.html"));
 });
 
-app.get('/recent', (req, res) => {
-    try {
-        const notes = fs.readdirSync(notesDir)
-            .filter(file => file.endsWith('.txt') && !file.endsWith('.raw.txt'))
-            .map(file => {
-                const filePath = path.join(notesDir, file);
-                const content = fs.readFileSync(filePath, 'utf8');
-                return {
-                    uuid: file.replace('.txt', ''),
-                    title: content.split('\n')[0].slice(0, 50) || 'Untitled Note',
-                    content: content.slice(0, 100) || 'No content'
-                };
-            })
-            .sort((a, b) => fs.statSync(path.join(notesDir, `${b.uuid}.txt`)).mtime - fs.statSync(path.join(notesDir, `${a.uuid}.txt`)).mtime)
-            .slice(0, 6);
-        res.json(notes);
-    } catch (e) {
-        console.error(`Failed to fetch recent notes: ${e.message}`);
-        res.status(500).json([]);
-    }
+// API info endpoint
+app.get('/api', (req, res) => {
+    res.json({
+        name: 'API GHICHU',
+        version: '2.0.0',
+        description: 'Công cụ giúp bạn ghi một đoạn văn bản hay code nào đó',
+        endpoints: api,
+        stats: count_req_data
+    });
+});
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.json({
+        status: 'healthy',
+        timestamp: new Date().toISOString(),
+        uptime: process.uptime()
+    });
 });
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-    console.log(`Server started on port ${PORT}`);
+    console.log(`🚀 API GHICHU Server started on port ${PORT}`);
+    console.log(`📝 Available endpoints: ${api.length}`);
+    console.log(`🌐 Access at: http://localhost:${PORT}`);
 });
+
+// Graceful shutdown
+process.on('SIGINT', () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    count_req_save();
+    process.exit(0);
+});
+
+process.on('SIGTERM', () => {
+    console.log('\n🛑 Shutting down gracefully...');
+    count_req_save();
+    process.exit(0);
+});
+
