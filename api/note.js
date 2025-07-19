@@ -27,22 +27,25 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
         }
 
         :root {
-            --bg-primary: #0f0f23;
-            --bg-secondary: #1e1e2e;
-            --bg-tertiary: #313244;
-            --text-primary: #cdd6f4;
-            --text-secondary: #bac2de;
-            --text-muted: #6c7086;
-            --accent-pink: #f5c2e7;
-            --accent-mauve: #cba6f7;
-            --accent-blue: #89b4fa;
-            --accent-green: #a6e3a1;
-            --accent-yellow: #f9e2af;
-            --accent-red: #f38ba8;
-            --accent-peach: #fab387;
-            --surface: #181825;
-            --overlay: #313244;
-            --border: #45475a;
+            --bg-primary: #fefefe;
+            --bg-secondary: #f8f9fa;
+            --bg-tertiary: #e9ecef;
+            --text-primary: #2d3748;
+            --text-secondary: #4a5568;
+            --text-muted: #718096;
+            --accent-pink: #ff6b9d;
+            --accent-mauve: #c44569;
+            --accent-blue: #4834d4;
+            --accent-green: #00d2d3;
+            --accent-yellow: #ff9ff3;
+            --accent-red: #ff3838;
+            --accent-peach: #ff9f43;
+            --surface: #ffffff;
+            --overlay: #f1f3f4;
+            --border: #e2e8f0;
+            --shadow: rgba(0, 0, 0, 0.1);
+            --shadow-light: rgba(255, 107, 157, 0.1);
+            --shadow-medium: rgba(255, 107, 157, 0.2);
         }
 
         body {
@@ -54,13 +57,14 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
         }
 
         .header {
-            background: linear-gradient(135deg, var(--surface), var(--bg-tertiary));
+            background: linear-gradient(135deg, var(--surface), var(--overlay));
             padding: 15px 20px;
             border-bottom: 1px solid var(--border);
             display: flex;
             align-items: center;
             justify-content: space-between;
             backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px var(--shadow-light);
         }
 
         .header-left {
@@ -133,7 +137,7 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
         }
 
         .line-numbers {
-            background: var(--surface);
+            background: var(--overlay);
             color: var(--text-muted);
             padding: 20px 15px;
             font-family: 'JetBrains Mono', 'Fira Code', monospace;
@@ -144,11 +148,13 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             user-select: none;
             min-width: 70px;
             overflow: hidden;
+            border-radius: 8px 0 0 8px;
+            box-shadow: 2px 0 5px var(--shadow-light);
         }
 
         .editor-textarea {
             flex: 1;
-            background: var(--bg-secondary);
+            background: var(--surface);
             color: var(--text-primary);
             border: none;
             padding: 20px;
@@ -161,6 +167,8 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             overflow-wrap: normal;
             overflow-x: auto;
             tab-size: 4;
+            box-shadow: inset 0 0 0 1px var(--border);
+            border-radius: 0 8px 8px 0;
         }
 
         .editor-textarea::placeholder {
@@ -170,6 +178,7 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
 
         .editor-textarea:focus {
             background: var(--bg-primary);
+            box-shadow: inset 0 0 0 2px var(--accent-pink);
         }
 
         .footer {
@@ -187,6 +196,7 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             font-size: 11px;
             color: var(--text-muted);
             backdrop-filter: blur(10px);
+            box-shadow: 0 -2px 10px var(--shadow-light);
         }
 
         .footer-left {
@@ -262,7 +272,7 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
         }
 
         ::-webkit-scrollbar-track {
-            background: var(--surface);
+            background: var(--overlay);
         }
 
         ::-webkit-scrollbar-thumb {
@@ -271,13 +281,13 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
         }
 
         ::-webkit-scrollbar-thumb:hover {
-            background: var(--overlay);
+            background: var(--accent-pink);
         }
 
         /* Selection styling */
         ::selection {
-            background: var(--accent-mauve);
-            color: var(--bg-primary);
+            background: var(--accent-pink);
+            color: var(--surface);
         }
 
         /* Loading animation */
