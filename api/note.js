@@ -9,7 +9,7 @@ if (!fs.existsSync(notesDir)) {
     fs.mkdirSync(notesDir, { recursive: true });
 }
 
-// Enhanced HTML template with improved code editor
+// Enhanced HTML template with improved mobility and professional info panel
 const getEnhancedEditorHTML = (uuid, content = '') => {
     return `<!DOCTYPE html>
 <html lang="vi">
@@ -53,21 +53,33 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
             color: var(--text-primary);
             min-height: 100vh;
-            overflow: hidden;
+            overflow-x: hidden;
+            overflow-y: auto;
+        }
+
+        .container {
+            max-width: 100vw;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
         .header {
             background: linear-gradient(135deg, var(--surface), var(--overlay));
-            padding: 15px 20px;
             border-bottom: 1px solid var(--border);
             box-shadow: 0 2px 10px var(--shadow-light);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(10px);
         }
 
-        .header-top {
+        .header-main {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 15px;
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
         }
 
         .header-left {
@@ -77,41 +89,48 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
         }
 
         .logo {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             background: linear-gradient(135deg, var(--accent-pink), var(--accent-mauve));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
         .note-id {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-muted);
             background: var(--overlay);
             padding: 4px 8px;
             border-radius: 6px;
             border: 1px solid var(--border);
+            max-width: 200px;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .header-right {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
 
         .status-indicator {
             display: flex;
             align-items: center;
             gap: 6px;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text-muted);
-            padding: 4px 8px;
-            border-radius: 6px;
+            padding: 6px 10px;
+            border-radius: 8px;
             background: var(--overlay);
             border: 1px solid var(--border);
             transition: all 0.3s ease;
+            min-width: 80px;
         }
 
         .status-dot {
@@ -120,6 +139,7 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             border-radius: 50%;
             background: var(--accent-green);
             transition: all 0.3s ease;
+            flex-shrink: 0;
         }
 
         .status-indicator.unsaved .status-dot {
@@ -137,41 +157,29 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             animation: none;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.7; transform: scale(0.9); }
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .info-bar {
+        .toolbar {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            padding: 8px 12px;
+            padding: 8px 20px;
             background: var(--bg-secondary);
-            border-radius: 8px;
-            font-family: 'JetBrains Mono', monospace;
             font-size: 11px;
             color: var(--text-muted);
         }
 
-        .info-left {
+        .toolbar-left {
             display: flex;
             align-items: center;
             gap: 20px;
         }
 
-        .info-right {
+        .toolbar-right {
             display: flex;
             align-items: center;
             gap: 15px;
         }
 
-        .stats {
+        .stats-group {
             display: flex;
             align-items: center;
             gap: 15px;
@@ -181,18 +189,60 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             display: flex;
             align-items: center;
             gap: 4px;
+            font-family: 'JetBrains Mono', monospace;
         }
 
-        .syntax-highlight {
+        .stat-value {
             color: var(--accent-blue);
             font-weight: 500;
         }
 
-        .editor-container {
+        .settings-group {
             display: flex;
-            height: calc(100vh - 120px);
+            align-items: center;
+            gap: 12px;
+        }
+
+        .setting-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            background: var(--overlay);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .setting-item:hover {
+            background: var(--accent-pink);
+            color: var(--surface);
+            border-color: var(--accent-pink);
+        }
+
+        .setting-item.active {
+            background: var(--accent-blue);
+            color: var(--surface);
+            border-color: var(--accent-blue);
+        }
+
+        .main-content {
+            flex: 1;
+            display: flex;
+            min-height: 0;
+            position: relative;
+        }
+
+        .editor-container {
+            flex: 1;
+            display: flex;
+            background: var(--surface);
+            border-radius: 12px;
+            margin: 20px;
+            box-shadow: 0 4px 20px var(--shadow-light);
             overflow: hidden;
-            margin: 0;
+            border: 1px solid var(--border);
         }
 
         .line-numbers {
@@ -208,9 +258,9 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             min-width: 70px;
             overflow-y: auto;
             overflow-x: hidden;
-            border-radius: 8px 0 0 8px;
-            box-shadow: 2px 0 5px var(--shadow-light);
             white-space: pre;
+            position: sticky;
+            left: 0;
         }
 
         .line-number {
@@ -219,11 +269,13 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             line-height: 22.4px;
             padding-right: 10px;
             transition: all 0.2s ease;
+            cursor: pointer;
         }
 
         .line-number:hover {
             background: var(--shadow-light);
             color: var(--accent-pink);
+            border-radius: 4px;
         }
 
         .editor-textarea {
@@ -239,10 +291,9 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             outline: none;
             white-space: pre;
             overflow-wrap: normal;
-            overflow-x: auto;
+            overflow: auto;
             tab-size: 4;
-            box-shadow: inset 0 0 0 1px var(--border);
-            border-radius: 0 8px 8px 0;
+            min-height: calc(100vh - 200px);
         }
 
         .editor-textarea::placeholder {
@@ -252,19 +303,119 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
 
         .editor-textarea:focus {
             background: var(--bg-primary);
-            box-shadow: inset 0 0 0 2px var(--accent-pink);
+        }
+
+        .floating-panel {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 8px 25px var(--shadow-medium);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            min-width: 250px;
+            opacity: 0.9;
+            transition: all 0.3s ease;
+        }
+
+        .floating-panel:hover {
+            opacity: 1;
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px var(--shadow-medium);
+        }
+
+        .panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .panel-title {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+
+        .panel-toggle {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--overlay);
+            border: 1px solid var(--border);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            transition: all 0.2s ease;
+        }
+
+        .panel-toggle:hover {
+            background: var(--accent-pink);
+            color: var(--surface);
+        }
+
+        .panel-content {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .panel-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 11px;
+        }
+
+        .panel-label {
+            color: var(--text-muted);
+        }
+
+        .panel-value {
+            color: var(--accent-blue);
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+        }
+
+        .quick-actions {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border);
+        }
+
+        .quick-action {
+            flex: 1;
+            padding: 4px 8px;
+            border-radius: 6px;
+            background: var(--overlay);
+            border: 1px solid var(--border);
+            font-size: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .quick-action:hover {
+            background: var(--accent-pink);
+            color: var(--surface);
+            border-color: var(--accent-pink);
         }
 
         /* Mobile Responsive */
         @media (max-width: 768px) {
-            .header {
+            .header-main {
                 padding: 10px 15px;
-            }
-
-            .header-top {
                 flex-direction: column;
                 gap: 10px;
-                margin-bottom: 10px;
             }
 
             .header-left, .header-right {
@@ -272,18 +423,24 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
                 justify-content: space-between;
             }
 
-            .info-bar {
+            .toolbar {
+                padding: 6px 15px;
                 flex-direction: column;
                 gap: 8px;
             }
 
-            .info-left, .info-right {
+            .toolbar-left, .toolbar-right {
                 width: 100%;
                 justify-content: space-between;
             }
 
+            .stats-group {
+                gap: 10px;
+            }
+
             .editor-container {
-                height: calc(100vh - 140px);
+                margin: 10px;
+                border-radius: 8px;
             }
 
             .line-numbers {
@@ -295,10 +452,25 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             .editor-textarea {
                 padding: 15px;
                 font-size: 13px;
+                min-height: calc(100vh - 180px);
             }
 
-            .stats {
-                gap: 10px;
+            .floating-panel {
+                bottom: 10px;
+                right: 10px;
+                left: 10px;
+                min-width: auto;
+            }
+
+            .panel-content {
+                flex-direction: row;
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .panel-row {
+                flex: 1;
+                min-width: 80px;
             }
         }
 
@@ -310,11 +482,13 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
 
         ::-webkit-scrollbar-track {
             background: var(--overlay);
+            border-radius: 4px;
         }
 
         ::-webkit-scrollbar-thumb {
             background: var(--border);
             border-radius: 4px;
+            transition: background 0.2s ease;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -327,40 +501,15 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             color: var(--surface);
         }
 
-        /* Loading animation */
-        .loading {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: var(--bg-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            animation: fadeOut 1s ease-out 0.5s forwards;
+        /* Animations */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(0.9); }
         }
 
-        .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 3px solid var(--border);
-            border-top: 3px solid var(--accent-pink);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes fadeOut {
-            to {
-                opacity: 0;
-                visibility: hidden;
-            }
-        }
-
-        /* Enhanced animations */
-        .status-indicator {
-            animation: slideIn 0.3s ease-out;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         @keyframes slideIn {
@@ -374,10 +523,6 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
             }
         }
 
-        .editor-container {
-            animation: fadeInUp 0.5s ease-out 0.2s both;
-        }
-
         @keyframes fadeInUp {
             from {
                 opacity: 0;
@@ -388,60 +533,93 @@ const getEnhancedEditorHTML = (uuid, content = '') => {
                 transform: translateY(0);
             }
         }
+
+        .header {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        .editor-container {
+            animation: fadeInUp 0.5s ease-out 0.2s both;
+        }
+
+        .floating-panel {
+            animation: fadeInUp 0.5s ease-out 0.4s both;
+        }
+
+        /* Enhanced focus states */
+        .editor-textarea:focus {
+            box-shadow: inset 0 0 0 2px var(--accent-pink);
+        }
+
+        /* Smooth transitions */
+        * {
+            transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        }
     </style>
 </head>
 <body>
-    <div class="loading">
-        <div class="loading-spinner"></div>
-    </div>
-
-    <div class="header">
-        <div class="header-top">
-            <div class="header-left">
-                <div class="logo">📝 Note Editor</div>
-                <div class="note-id">${uuid}</div>
-            </div>
-            <div class="header-right">
-                <div class="status-indicator saved" id="status-indicator">
-                    <div class="status-dot"></div>
-                    <span id="status-text">Đã lưu</span>
+    <div class="container">
+        <div class="header">
+            <div class="header-main">
+                <div class="header-left">
+                    <div class="logo">
+                        📝 Note Editor
+                    </div>
+                    <div class="note-id" title="${uuid}">${uuid}</div>
                 </div>
-            </div>
-        </div>
-        
-        <div class="info-bar">
-            <div class="info-left">
-                <div class="stats">
-                    <div class="stat-item">
-                        <span>Dòng:</span>
-                        <span id="line-count">1</span>
-                    </div>
-                    <div class="stat-item">
-                        <span>Ký tự:</span>
-                        <span id="char-count">0</span>
-                    </div>
-                    <div class="stat-item">
-                        <span>Từ:</span>
-                        <span id="word-count">0</span>
+                <div class="header-right">
+                    <div class="status-indicator saved" id="status-indicator">
+                        <div class="status-dot"></div>
+                        <span id="status-text">Đã lưu</span>
                     </div>
                 </div>
             </div>
-            <div class="info-right">
-                <span>UTF-8</span>
-                <span class="syntax-highlight">JavaScript</span>
-                <span>Auto-save: ON</span>
+            
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <div class="stats-group">
+                        <div class="stat-item">
+                            <span>Dòng:</span>
+                            <span class="stat-value" id="line-count">1</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Ký tự:</span>
+                            <span class="stat-value" id="char-count">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span>Từ:</span>
+                            <span class="stat-value" id="word-count">0</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="toolbar-right">
+                    <div class="settings-group">
+                        <div class="setting-item active" id="auto-save-toggle">
+                            <span>Auto-save</span>
+                        </div>
+                        <div class="setting-item" id="word-wrap-toggle">
+                            <span>Word Wrap</span>
+                        </div>
+                        <div class="setting-item">
+                            <span>UTF-8</span>
+                        </div>
+                        <div class="setting-item">
+                            <span>JavaScript</span>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
-    </div>
 
-    <div class="editor-container">
-        <div class="line-numbers" id="line-numbers">
-            <div class="line-number">1</div>
-        </div>
-        <textarea 
-            class="editor-textarea" 
-            id="editor-textarea" 
-            placeholder="// Bắt đầu viết ghi chú hoặc code của bạn tại đây...
+        <div class="main-content">
+            <div class="editor-container">
+                <div class="line-numbers" id="line-numbers">
+                    <div class="line-number">1</div>
+                </div>
+                <textarea 
+                    class="editor-textarea" 
+                    id="editor-textarea" 
+                    placeholder="// Bắt đầu viết ghi chú hoặc code của bạn tại đây...
 // Editor này hỗ trợ syntax highlighting và auto-save
 // Thay đổi sẽ được tự động lưu sau 1 giây không hoạt động
 
@@ -451,8 +629,40 @@ function welcome() {
 }
 
 welcome();"
-            spellcheck="false"
-        ></textarea>
+                    spellcheck="false"
+                ></textarea>
+            </div>
+        </div>
+
+        <div class="floating-panel" id="floating-panel">
+            <div class="panel-header">
+                <div class="panel-title">📊 Thống kê</div>
+                <div class="panel-toggle" id="panel-toggle">−</div>
+            </div>
+            <div class="panel-content" id="panel-content">
+                <div class="panel-row">
+                    <span class="panel-label">Thời gian tạo:</span>
+                    <span class="panel-value" id="created-time">--:--</span>
+                </div>
+                <div class="panel-row">
+                    <span class="panel-label">Lần sửa cuối:</span>
+                    <span class="panel-value" id="modified-time">--:--</span>
+                </div>
+                <div class="panel-row">
+                    <span class="panel-label">Kích thước:</span>
+                    <span class="panel-value" id="file-size">0 B</span>
+                </div>
+                <div class="panel-row">
+                    <span class="panel-label">Encoding:</span>
+                    <span class="panel-value">UTF-8</span>
+                </div>
+                <div class="quick-actions">
+                    <div class="quick-action" id="copy-link">📋 Copy Link</div>
+                    <div class="quick-action" id="download-file">💾 Download</div>
+                    <div class="quick-action" id="share-note">🔗 Share</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -463,9 +673,23 @@ welcome();"
         const lineCount = document.getElementById('line-count');
         const charCount = document.getElementById('char-count');
         const wordCount = document.getElementById('word-count');
+        const createdTime = document.getElementById('created-time');
+        const modifiedTime = document.getElementById('modified-time');
+        const fileSize = document.getElementById('file-size');
+        const panelToggle = document.getElementById('panel-toggle');
+        const panelContent = document.getElementById('panel-content');
+        const autoSaveToggle = document.getElementById('auto-save-toggle');
+        const wordWrapToggle = document.getElementById('word-wrap-toggle');
 
         let saveTimeout;
-        let currentStatus = 'saved'; // 'unsaved', 'saving', 'saved'
+        let currentStatus = 'saved';
+        let autoSaveEnabled = true;
+        let wordWrapEnabled = false;
+
+        // Initialize timestamps
+        const now = new Date();
+        createdTime.textContent = now.toLocaleTimeString('vi-VN');
+        modifiedTime.textContent = now.toLocaleTimeString('vi-VN');
 
         // Update status indicator
         function updateStatus(status) {
@@ -481,11 +705,12 @@ welcome();"
                     break;
                 case 'saved':
                     statusText.textContent = 'Đã lưu';
+                    modifiedTime.textContent = new Date().toLocaleTimeString('vi-VN');
                     break;
             }
         }
 
-        // Update line numbers with vertical layout
+        // Update line numbers and stats
         function updateLineNumbers() {
             const lines = textarea.value.split('\\n');
             const lineNumbersHTML = lines.map((_, index) => 
@@ -498,10 +723,25 @@ welcome();"
             lineCount.textContent = lines.length;
             charCount.textContent = textarea.value.length;
             wordCount.textContent = textarea.value.trim() ? textarea.value.trim().split(/\\s+/).length : 0;
+            
+            // Update file size
+            const bytes = new Blob([textarea.value]).size;
+            fileSize.textContent = formatBytes(bytes);
+        }
+
+        // Format bytes
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
         }
 
         // Save content to server
         function saveContent() {
+            if (!autoSaveEnabled) return;
+            
             updateStatus('saving');
             
             fetch(location.href, {
@@ -523,6 +763,59 @@ welcome();"
             });
         }
 
+        // Panel toggle
+        panelToggle.addEventListener('click', function() {
+            const isCollapsed = panelContent.style.display === 'none';
+            panelContent.style.display = isCollapsed ? 'flex' : 'none';
+            panelToggle.textContent = isCollapsed ? '−' : '+';
+        });
+
+        // Auto-save toggle
+        autoSaveToggle.addEventListener('click', function() {
+            autoSaveEnabled = !autoSaveEnabled;
+            autoSaveToggle.classList.toggle('active', autoSaveEnabled);
+            autoSaveToggle.innerHTML = '<span>Auto-save ' + (autoSaveEnabled ? 'ON' : 'OFF') + '</span>';
+        });
+
+        // Word wrap toggle
+        wordWrapToggle.addEventListener('click', function() {
+            wordWrapEnabled = !wordWrapEnabled;
+            wordWrapToggle.classList.toggle('active', wordWrapEnabled);
+            textarea.style.whiteSpace = wordWrapEnabled ? 'pre-wrap' : 'pre';
+            textarea.style.overflowX = wordWrapEnabled ? 'hidden' : 'auto';
+        });
+
+        // Quick actions
+        document.getElementById('copy-link').addEventListener('click', function() {
+            navigator.clipboard.writeText(location.href);
+            this.textContent = '✅ Copied!';
+            setTimeout(() => this.textContent = '📋 Copy Link', 2000);
+        });
+
+        document.getElementById('download-file').addEventListener('click', function() {
+            const blob = new Blob([textarea.value], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = '${uuid}.txt';
+            a.click();
+            URL.revokeObjectURL(url);
+        });
+
+        document.getElementById('share-note').addEventListener('click', function() {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'API GHICHU Note',
+                    text: 'Check out this note',
+                    url: location.href
+                });
+            } else {
+                navigator.clipboard.writeText(location.href);
+                this.textContent = '✅ Link copied!';
+                setTimeout(() => this.textContent = '🔗 Share', 2000);
+            }
+        });
+
         // Load initial content
         const url = new URL(location.href);
         url.searchParams.append('raw', 'true');
@@ -540,8 +833,10 @@ welcome();"
             // Setup event listeners
             textarea.addEventListener('input', function() {
                 updateStatus('unsaved');
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(saveContent, 1000);
+                if (autoSaveEnabled) {
+                    clearTimeout(saveTimeout);
+                    saveTimeout = setTimeout(saveContent, 1000);
+                }
                 updateLineNumbers();
             });
 
@@ -608,7 +903,7 @@ module.exports = {
     info: {
         path: '/note/:UUID',
         title: 'Enhanced Note API',
-        desc: 'API for creating and retrieving notes with modern code editor',
+        desc: 'API for creating and retrieving notes with professional code editor',
         example_url: [
             { method: 'GET', query: '/note/:UUID', desc: 'Retrieve or edit a note' },
             { method: 'PUT', query: '/note/:UUID', desc: 'Create or update a note' },
