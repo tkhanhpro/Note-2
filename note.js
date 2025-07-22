@@ -1,325 +1,391 @@
-// note.js - Client-side utilities for API GHICHU
-// This file provides helper functions for interacting with the note API
+// API GHICHU Client Utilities
+// Synchronized with api/note.js for consistency
 
 class APIGhichuClient {
     constructor(baseUrl = '') {
         this.baseUrl = baseUrl;
-        this.currentNoteId = null;
-        this.autoSaveTimeout = null;
-        this.autoSaveDelay = 1000; // 1 second
+        this.currentUUID = null;
+        this.autoSaveEnabled = true;
+        this.saveTimeout = null;
     }
 
-    // Generate a new UUID
-    generateUUID() {
-        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-            const r = Math.random() * 16 | 0;
-            const v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
-        });
-    }
-
-    // Create a new note
-    async createNote(content = '', noteId = null) {
-        try {
-            const uuid = noteId || this.generateUUID();
-            const response = await fetch(`${this.baseUrl}/note/${uuid}`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'text/plain; charset=utf-8',
-                },
-                body: content
-            });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const result = await response.json();
-            this.currentNoteId = uuid;
-            return { success: true, uuid, ...result };
-        } catch (error) {
-            console.error('Error creating note:', error);
-            return { success: false, error: error.message };
+    // Language configurations matching server-side
+    static languageConfigs = {
+        javascript: { 
+            name: 'JavaScript', 
+            icon: '🟨', 
+            extensions: ['.js', '.jsx', '.mjs'],
+            keywords: ['function', 'const', 'let', 'var', 'if', 'else', 'for', 'while', 'return', 'class', 'import', 'export']
+        },
+        typescript: { 
+            name: 'TypeScript', 
+            icon: '🔷', 
+            extensions: ['.ts', '.tsx'],
+            keywords: ['interface', 'type', 'enum', 'namespace', 'declare', 'abstract']
+        },
+        python: { 
+            name: 'Python', 
+            icon: '🐍', 
+            extensions: ['.py', '.pyw'],
+            keywords: ['def', 'class', 'import', 'from', 'if', 'elif', 'else', 'for', 'while', 'try', 'except']
+        },
+        java: { 
+            name: 'Java', 
+            icon: '☕', 
+            extensions: ['.java'],
+            keywords: ['public', 'private', 'protected', 'class', 'interface', 'extends', 'implements']
+        },
+        cpp: { 
+            name: 'C++', 
+            icon: '⚡', 
+            extensions: ['.cpp', '.cc', '.cxx', '.h', '.hpp'],
+            keywords: ['#include', 'namespace', 'class', 'struct', 'template', 'typename']
+        },
+        html: { 
+            name: 'HTML', 
+            icon: '🌐', 
+            extensions: ['.html', '.htm'],
+            keywords: ['<!DOCTYPE', '<html>', '<head>', '<body>', '<div>', '<span>']
+        },
+        css: { 
+            name: 'CSS', 
+            icon: '🎨', 
+            extensions: ['.css', '.scss', '.sass'],
+            keywords: ['@import', '@media', 'display:', 'position:', 'color:', 'background:']
+        },
+        json: { 
+            name: 'JSON', 
+            icon: '📋', 
+            extensions: ['.json'],
+            keywords: ['{', '}', '[', ']', '"']
+        },
+        markdown: { 
+            name: 'Markdown', 
+            icon: '📝', 
+            extensions: ['.md', '.markdown'],
+            keywords: ['#', '##', '###', '**', '*', '`', '```']
+        },
+        sql: { 
+            name: 'SQL', 
+            icon: '🗄️', 
+            extensions: ['.sql'],
+            keywords: ['SELECT', 'FROM', 'WHERE', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'ALTER']
+        },
+        php: { 
+            name: 'PHP', 
+            icon: '🐘', 
+            extensions: ['.php'],
+            keywords: ['<?php', 'function', 'class', 'public', 'private', 'protected', '$']
+        },
+        text: { 
+            name: 'Plain Text', 
+            icon: '📄', 
+            extensions: ['.txt'],
+            keywords: []
         }
+    };
+
+    // Detect language from content (matching server logic)
+    static detectLanguage(content) {
+        if (!content || content.trim().length === 0) return 'text';
+        
+        const lines = content.split('\n').slice(0, 10);
+        const text = lines.join(' ').toLowerCase();
+        
+        if (text.includes('<!doctype') || text.includes('<html>')) return 'html';
+        if (text.includes('<?php')) return 'php';
+        if (text.includes('def ') && text.includes('import ')) return 'python';
+        if (text.includes('function ') && (text.includes('const ') || text.includes('let '))) return 'javascript';
+        if (text.includes('interface ') || text.includes('type ')) return 'typescript';
+        if (text.includes('public class ') || text.includes('import java.')) return 'java';
+        if (text.includes('#include') || text.includes('namespace std')) return 'cpp';
+        if (text.includes('select ') && text.includes('from ')) return 'sql';
+        if (text.startsWith('{') && text.includes('"')) return 'json';
+        if (text.includes('# ') || text.includes('## ')) return 'markdown';
+        if (text.includes('display:') || text.includes('@media')) return 'css';
+        
+        return 'text';
     }
 
     // Get note content
-    async getNote(noteId, raw = false) {
+    async getNote(uuid) {
         try {
-            const url = raw 
-                ? `${this.baseUrl}/note/${noteId}?raw=true`
-                : `${this.baseUrl}/note/${noteId}`;
-            
-            const response = await fetch(url, {
-                headers: raw ? { 'user-agent': 'fetch' } : {}
+            const response = await fetch(`${this.baseUrl}/note/${uuid}?raw=true`, {
+                method: 'GET',
+                headers: { 'user-agent': 'fetch' }
             });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            if (raw) {
-                return await response.text();
+            
+            if (response.ok) {
+                const content = await response.text();
+                this.currentUUID = uuid;
+                return {
+                    success: true,
+                    content: content,
+                    language: APIGhichuClient.detectLanguage(content),
+                    uuid: uuid
+                };
             } else {
-                return await response.text(); // HTML content
+                return {
+                    success: false,
+                    error: `HTTP ${response.status}`,
+                    content: ''
+                };
             }
         } catch (error) {
-            console.error('Error getting note:', error);
-            return null;
+            console.error('Error fetching note:', error);
+            return {
+                success: false,
+                error: error.message,
+                content: ''
+            };
         }
     }
 
-    // Update note content
-    async updateNote(noteId, content) {
+    // Save note content
+    async saveNote(uuid, content) {
         try {
-            const response = await fetch(`${this.baseUrl}/note/${noteId}`, {
+            const response = await fetch(`${this.baseUrl}/note/${uuid}`, {
                 method: 'PUT',
-                headers: {
-                    'Content-Type': 'text/plain; charset=utf-8',
-                },
+                headers: { 'Content-Type': 'text/plain; charset=utf-8' },
                 body: content
             });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            
+            if (response.ok) {
+                const result = await response.json();
+                this.currentUUID = uuid;
+                return {
+                    success: true,
+                    message: result.message,
+                    uuid: uuid,
+                    timestamp: result.timestamp
+                };
+            } else {
+                const error = await response.json();
+                return {
+                    success: false,
+                    error: error.message || `HTTP ${response.status}`
+                };
             }
-
-            const result = await response.json();
-            return { success: true, ...result };
         } catch (error) {
-            console.error('Error updating note:', error);
-            return { success: false, error: error.message };
+            console.error('Error saving note:', error);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 
     // Delete note
-    async deleteNote(noteId) {
+    async deleteNote(uuid) {
         try {
-            const response = await fetch(`${this.baseUrl}/note/${noteId}`, {
+            const response = await fetch(`${this.baseUrl}/note/${uuid}`, {
                 method: 'DELETE'
             });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            
+            if (response.ok) {
+                const result = await response.json();
+                if (this.currentUUID === uuid) {
+                    this.currentUUID = null;
+                }
+                return {
+                    success: true,
+                    message: result.message,
+                    uuid: uuid
+                };
+            } else {
+                const error = await response.json();
+                return {
+                    success: false,
+                    error: error.message || `HTTP ${response.status}`
+                };
             }
-
-            const result = await response.json();
-            if (this.currentNoteId === noteId) {
-                this.currentNoteId = null;
-            }
-            return { success: true, ...result };
         } catch (error) {
             console.error('Error deleting note:', error);
-            return { success: false, error: error.message };
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 
-    // Auto-save functionality
-    setupAutoSave(textarea, noteId) {
-        if (!textarea || !noteId) return;
+    // Setup auto-save for textarea element
+    setupAutoSave(textareaElement, uuid, delay = 2000) {
+        if (!textareaElement || !uuid) {
+            console.error('Invalid textarea element or UUID for auto-save setup');
+            return;
+        }
 
-        this.currentNoteId = noteId;
-
-        const autoSave = () => {
-            clearTimeout(this.autoSaveTimeout);
-            this.autoSaveTimeout = setTimeout(async () => {
-                const content = textarea.value;
-                const result = await this.updateNote(noteId, content);
-                
+        const saveHandler = () => {
+            if (!this.autoSaveEnabled) return;
+            
+            clearTimeout(this.saveTimeout);
+            this.saveTimeout = setTimeout(async () => {
+                const result = await this.saveNote(uuid, textareaElement.value);
                 if (result.success) {
-                    this.showSaveIndicator('💾 Saved');
+                    console.log('✅ Auto-saved:', uuid);
                 } else {
-                    this.showSaveIndicator('❌ Save failed', true);
+                    console.error('❌ Auto-save failed:', result.error);
                 }
-            }, this.autoSaveDelay);
+            }, delay);
         };
 
-        textarea.addEventListener('input', autoSave);
+        textareaElement.addEventListener('input', saveHandler);
         
-        // Manual save with Ctrl+S
-        textarea.addEventListener('keydown', (e) => {
+        // Return cleanup function
+        return () => {
+            textareaElement.removeEventListener('input', saveHandler);
+            clearTimeout(this.saveTimeout);
+        };
+    }
+
+    // Calculate text statistics
+    static getTextStats(content) {
+        const lines = content.split('\n');
+        const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+        const chars = content.length;
+        const bytes = new Blob([content]).size;
+        
+        return {
+            lines: lines.length,
+            words: words,
+            characters: chars,
+            bytes: bytes,
+            size: APIGhichuClient.formatBytes(bytes)
+        };
+    }
+
+    // Format bytes to human readable
+    static formatBytes(bytes) {
+        if (bytes === 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // Setup line numbers synchronization
+    static setupLineNumbers(textareaElement, lineNumbersElement) {
+        if (!textareaElement || !lineNumbersElement) {
+            console.error('Invalid elements for line numbers setup');
+            return;
+        }
+
+        const updateLineNumbers = () => {
+            const lines = textareaElement.value.split('\n');
+            const lineNumbersHTML = lines.map((_, index) => 
+                `<div class="line-number">${index + 1}</div>`
+            ).join('');
+            
+            lineNumbersElement.innerHTML = lineNumbersHTML;
+        };
+
+        const syncScroll = () => {
+            lineNumbersElement.scrollTop = textareaElement.scrollTop;
+        };
+
+        textareaElement.addEventListener('input', updateLineNumbers);
+        textareaElement.addEventListener('scroll', syncScroll);
+        
+        // Initial update
+        updateLineNumbers();
+        
+        // Return cleanup function
+        return () => {
+            textareaElement.removeEventListener('input', updateLineNumbers);
+            textareaElement.removeEventListener('scroll', syncScroll);
+        };
+    }
+
+    // Setup keyboard shortcuts
+    static setupKeyboardShortcuts(textareaElement, callbacks = {}) {
+        if (!textareaElement) {
+            console.error('Invalid textarea element for keyboard shortcuts setup');
+            return;
+        }
+
+        const keydownHandler = (e) => {
+            // Tab support
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = textareaElement.selectionStart;
+                const end = textareaElement.selectionEnd;
+                
+                if (e.shiftKey) {
+                    // Remove indentation
+                    const beforeCursor = textareaElement.value.substring(0, start);
+                    const lines = beforeCursor.split('\n');
+                    const currentLine = lines[lines.length - 1];
+                    
+                    if (currentLine.startsWith('    ')) {
+                        lines[lines.length - 1] = currentLine.substring(4);
+                        textareaElement.value = lines.join('\n') + textareaElement.value.substring(end);
+                        textareaElement.selectionStart = textareaElement.selectionEnd = start - 4;
+                    }
+                } else {
+                    // Add indentation
+                    textareaElement.value = textareaElement.value.substring(0, start) + '    ' + textareaElement.value.substring(end);
+                    textareaElement.selectionStart = textareaElement.selectionEnd = start + 4;
+                }
+                
+                if (callbacks.onTabIndent) callbacks.onTabIndent();
+            }
+            
+            // Ctrl+S to save
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
-                clearTimeout(this.autoSaveTimeout);
-                this.updateNote(noteId, textarea.value).then(result => {
-                    if (result.success) {
-                        this.showSaveIndicator('💾 Saved manually');
-                    } else {
-                        this.showSaveIndicator('❌ Save failed', true);
-                    }
-                });
+                if (callbacks.onSave) callbacks.onSave();
             }
-        });
-
-        return autoSave;
-    }
-
-    // Show save indicator
-    showSaveIndicator(message, isError = false) {
-        const indicator = document.getElementById('save-indicator') || 
-                         document.querySelector('.save-indicator');
-        
-        if (indicator) {
-            indicator.textContent = message;
-            indicator.style.color = isError ? '#f38ba8' : '#f9e2af';
-            indicator.classList.add('saving');
             
-            setTimeout(() => {
-                indicator.classList.remove('saving');
-            }, 2000);
-        }
-    }
-
-    // Get API info
-    async getAPIInfo() {
-        try {
-            const response = await fetch(`${this.baseUrl}/api`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+            // Ctrl+D to duplicate line
+            if (e.ctrlKey && e.key === 'd') {
+                e.preventDefault();
+                const start = textareaElement.selectionStart;
+                const beforeCursor = textareaElement.value.substring(0, start);
+                const afterCursor = textareaElement.value.substring(start);
+                const lines = beforeCursor.split('\n');
+                const currentLine = lines[lines.length - 1];
+                
+                textareaElement.value = beforeCursor + '\n' + currentLine + afterCursor;
+                textareaElement.selectionStart = textareaElement.selectionEnd = start + currentLine.length + 1;
+                
+                if (callbacks.onDuplicateLine) callbacks.onDuplicateLine();
             }
-            return await response.json();
-        } catch (error) {
-            console.error('Error getting API info:', error);
-            return null;
-        }
+        };
+
+        textareaElement.addEventListener('keydown', keydownHandler);
+        
+        // Return cleanup function
+        return () => {
+            textareaElement.removeEventListener('keydown', keydownHandler);
+        };
     }
 
     // Health check
     async healthCheck() {
         try {
-            const response = await fetch(`${this.baseUrl}/health`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
+            const response = await fetch(`${this.baseUrl}/`, {
+                method: 'GET'
+            });
+            
+            return {
+                success: response.ok,
+                status: response.status,
+                timestamp: new Date().toISOString()
+            };
         } catch (error) {
-            console.error('Error checking health:', error);
-            return null;
+            return {
+                success: false,
+                error: error.message,
+                timestamp: new Date().toISOString()
+            };
         }
     }
-
-    // Utility: Format file size
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    // Utility: Count words, lines, characters
-    getTextStats(text) {
-        const lines = text.split('\n').length;
-        const characters = text.length;
-        const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-        const charactersNoSpaces = text.replace(/\s/g, '').length;
-        
-        return {
-            lines,
-            characters,
-            charactersNoSpaces,
-            words,
-            size: this.formatFileSize(new Blob([text]).size)
-        };
-    }
-
-    // Utility: Update stats display
-    updateStatsDisplay(text) {
-        const stats = this.getTextStats(text);
-        
-        const updateElement = (id, value) => {
-            const element = document.getElementById(id);
-            if (element) element.textContent = value;
-        };
-
-        updateElement('line-count', stats.lines);
-        updateElement('char-count', stats.characters);
-        updateElement('word-count', stats.words);
-        updateElement('char-no-spaces-count', stats.charactersNoSpaces);
-        updateElement('file-size', stats.size);
-    }
-
-    // Enhanced line numbers
-    updateLineNumbers(textarea) {
-        const lineNumbers = document.getElementById('line-numbers');
-        if (!lineNumbers || !textarea) return;
-
-        const lines = textarea.value.split('\n');
-        const lineNumbersHTML = lines.map((_, index) => 
-            `<div class="line-number">${index + 1}</div>`
-        ).join('');
-        
-        lineNumbers.innerHTML = lineNumbersHTML;
-        
-        // Sync scroll
-        lineNumbers.scrollTop = textarea.scrollTop;
-    }
-
-    // Setup enhanced editor
-    setupEnhancedEditor(textarea, noteId) {
-        if (!textarea) return;
-
-        // Setup auto-save
-        this.setupAutoSave(textarea, noteId);
-
-        // Setup line numbers
-        textarea.addEventListener('input', () => {
-            this.updateLineNumbers(textarea);
-            this.updateStatsDisplay(textarea.value);
-        });
-
-        textarea.addEventListener('scroll', () => {
-            this.updateLineNumbers(textarea);
-        });
-
-        // Tab key support
-        textarea.addEventListener('keydown', (e) => {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                
-                if (e.shiftKey) {
-                    // Shift+Tab: Remove indentation
-                    const lines = textarea.value.split('\n');
-                    const startLine = textarea.value.substring(0, start).split('\n').length - 1;
-                    const endLine = textarea.value.substring(0, end).split('\n').length - 1;
-                    
-                    for (let i = startLine; i <= endLine; i++) {
-                        if (lines[i].startsWith('    ')) {
-                            lines[i] = lines[i].substring(4);
-                        } else if (lines[i].startsWith('\t')) {
-                            lines[i] = lines[i].substring(1);
-                        }
-                    }
-                    
-                    textarea.value = lines.join('\n');
-                } else {
-                    // Tab: Add indentation
-                    textarea.value = textarea.value.substring(0, start) + 
-                                   '    ' + 
-                                   textarea.value.substring(end);
-                    textarea.selectionStart = textarea.selectionEnd = start + 4;
-                }
-                
-                this.updateLineNumbers(textarea);
-                this.updateStatsDisplay(textarea.value);
-            }
-        });
-
-        // Initial setup
-        this.updateLineNumbers(textarea);
-        this.updateStatsDisplay(textarea.value);
-    }
 }
 
-// Export for use in browser
-if (typeof window !== 'undefined') {
-    window.APIGhichuClient = APIGhichuClient;
-}
-
-// Export for Node.js
+// Export for both Node.js and browser environments
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = APIGhichuClient;
+} else if (typeof window !== 'undefined') {
+    window.APIGhichuClient = APIGhichuClient;
 }
 
