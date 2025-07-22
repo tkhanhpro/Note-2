@@ -108,8 +108,8 @@ function detectLanguage(content) {
     return 'text';
 }
 
-// Compact and clean HTML template
-const getCompactEditorHTML = (uuid, content = '') => {
+// Ultra compact and clean HTML template
+const getUltraCompactEditorHTML = (uuid, content = '') => {
     const detectedLang = detectLanguage(content);
     const langConfig = languageConfigs[detectedLang] || languageConfigs.text;
     
@@ -155,57 +155,65 @@ const getCompactEditorHTML = (uuid, content = '') => {
             flex-direction: column;
         }
 
-        /* Compact Header */
+        /* Ultra Compact Header - 32px height */
         .header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 6px 12px;
+            padding: 4px 8px;
             display: flex;
             align-items: center;
             justify-content: space-between;
             flex-shrink: 0;
-            min-height: 40px;
+            height: 32px;
+            font-size: 10px;
         }
 
         .header-left {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
+            flex: 1;
+            min-width: 0;
         }
 
         .logo {
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
             font-weight: 600;
             color: var(--accent);
-            font-size: 14px;
+            font-size: 11px;
+            white-space: nowrap;
         }
 
         .note-id {
             font-family: 'JetBrains Mono', monospace;
-            font-size: 10px;
+            font-size: 8px;
             color: var(--text-muted);
             background: var(--accent-light);
-            padding: 2px 4px;
-            border-radius: 3px;
-            max-width: 120px;
+            padding: 1px 3px;
+            border-radius: 2px;
+            max-width: 80px;
             overflow: hidden;
             text-overflow: ellipsis;
+            white-space: nowrap;
         }
 
         .header-center {
             display: flex;
             align-items: center;
-            gap: 12px;
-            font-size: 11px;
+            gap: 8px;
+            font-size: 9px;
+            flex: 1;
+            justify-content: center;
         }
 
-        .stat-compact {
+        .stat-mini {
             display: flex;
             align-items: center;
-            gap: 3px;
+            gap: 2px;
             color: var(--text-muted);
+            white-space: nowrap;
         }
 
         .stat-value {
@@ -217,21 +225,24 @@ const getCompactEditorHTML = (uuid, content = '') => {
         .header-right {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
+            flex: 1;
+            justify-content: flex-end;
         }
 
         .language-selector {
             display: flex;
             align-items: center;
-            gap: 3px;
-            padding: 3px 6px;
+            gap: 2px;
+            padding: 2px 4px;
             background: var(--accent-light);
             border: 1px solid var(--border);
-            border-radius: 4px;
-            font-size: 11px;
+            border-radius: 3px;
+            font-size: 9px;
             cursor: pointer;
             transition: all 0.2s ease;
             position: relative;
+            white-space: nowrap;
         }
 
         .language-selector:hover {
@@ -242,18 +253,19 @@ const getCompactEditorHTML = (uuid, content = '') => {
         .status {
             display: flex;
             align-items: center;
-            gap: 3px;
-            font-size: 10px;
+            gap: 2px;
+            font-size: 8px;
             color: var(--text-muted);
-            padding: 2px 6px;
+            padding: 1px 4px;
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 4px;
+            border-radius: 3px;
+            white-space: nowrap;
         }
 
         .status-dot {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
             border-radius: 50%;
             background: var(--success);
             transition: all 0.3s ease;
@@ -283,23 +295,23 @@ const getCompactEditorHTML = (uuid, content = '') => {
         .line-numbers {
             background: var(--surface);
             border-right: 1px solid var(--border);
-            padding: 12px 6px;
+            padding: 8px 4px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
             color: var(--text-muted);
             text-align: right;
             user-select: none;
-            min-width: 45px;
+            min-width: 35px;
             overflow-y: auto;
             white-space: pre;
         }
 
         .line-number {
             display: block;
-            height: 19.5px;
-            line-height: 19.5px;
-            padding-right: 6px;
+            height: 16.8px;
+            line-height: 16.8px;
+            padding-right: 4px;
             cursor: pointer;
             transition: color 0.2s ease;
         }
@@ -312,10 +324,10 @@ const getCompactEditorHTML = (uuid, content = '') => {
             flex: 1;
             background: var(--surface);
             border: none;
-            padding: 12px;
+            padding: 8px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 13px;
-            line-height: 1.5;
+            font-size: 12px;
+            line-height: 1.4;
             color: var(--text);
             resize: none;
             outline: none;
@@ -335,11 +347,11 @@ const getCompactEditorHTML = (uuid, content = '') => {
             right: 0;
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 6px;
+            border-radius: 4px;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
             z-index: 1000;
-            min-width: 140px;
-            max-height: 180px;
+            min-width: 120px;
+            max-height: 150px;
             overflow-y: auto;
             display: none;
         }
@@ -347,9 +359,9 @@ const getCompactEditorHTML = (uuid, content = '') => {
         .language-option {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 10px;
-            font-size: 11px;
+            gap: 4px;
+            padding: 4px 8px;
+            font-size: 9px;
             cursor: pointer;
             transition: background 0.2s ease;
         }
@@ -366,45 +378,47 @@ const getCompactEditorHTML = (uuid, content = '') => {
         /* Mobile Responsive */
         @media (max-width: 768px) {
             .header {
-                padding: 4px 8px;
-                flex-wrap: wrap;
-                gap: 6px;
-                min-height: 35px;
+                padding: 3px 6px;
+                height: 28px;
             }
 
             .header-center {
                 order: 3;
                 width: 100%;
                 justify-content: center;
-                gap: 8px;
-                margin-top: 2px;
+                gap: 6px;
+                margin-top: 1px;
             }
 
             .note-id {
-                max-width: 80px;
-                font-size: 9px;
+                max-width: 60px;
+                font-size: 7px;
             }
 
             .line-numbers {
-                min-width: 35px;
-                padding: 8px 4px;
-                font-size: 12px;
+                min-width: 30px;
+                padding: 6px 3px;
+                font-size: 11px;
             }
 
             .editor {
-                padding: 8px;
-                font-size: 12px;
+                padding: 6px;
+                font-size: 11px;
             }
 
             .logo {
-                font-size: 12px;
+                font-size: 10px;
+            }
+
+            .stat-mini {
+                font-size: 8px;
             }
         }
 
         /* Scrollbar */
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 4px;
+            height: 4px;
         }
 
         ::-webkit-scrollbar-track {
@@ -413,7 +427,7 @@ const getCompactEditorHTML = (uuid, content = '') => {
 
         ::-webkit-scrollbar-thumb {
             background: var(--border);
-            border-radius: 3px;
+            border-radius: 2px;
         }
 
         ::-webkit-scrollbar-thumb:hover {
@@ -427,13 +441,13 @@ const getCompactEditorHTML = (uuid, content = '') => {
 
         /* Animations */
         .language-dropdown {
-            animation: slideDown 0.2s ease-out;
+            animation: slideDown 0.15s ease-out;
         }
 
         @keyframes slideDown {
             from {
                 opacity: 0;
-                transform: translateY(-4px);
+                transform: translateY(-2px);
             }
             to {
                 opacity: 1;
@@ -458,23 +472,23 @@ const getCompactEditorHTML = (uuid, content = '') => {
             <div class="header-left">
                 <div class="logo">
                     <span>💻</span>
-                    <span>Code Editor</span>
+                    <span>Editor</span>
                 </div>
-                <div class="note-id" title="${uuid}">${uuid}</div>
+                <div class="note-id" title="${uuid}">${uuid.substring(0, 8)}</div>
             </div>
             
             <div class="header-center">
-                <div class="stat-compact">
-                    <span>Lines:</span>
+                <div class="stat-mini">
+                    <span>L:</span>
                     <span class="stat-value" id="line-count">1</span>
                 </div>
-                <div class="stat-compact">
-                    <span>Chars:</span>
+                <div class="stat-mini">
+                    <span>C:</span>
                     <span class="stat-value" id="char-count">0</span>
                 </div>
-                <div class="stat-compact">
-                    <span>Size:</span>
-                    <span class="stat-value" id="file-size">0 B</span>
+                <div class="stat-mini">
+                    <span>S:</span>
+                    <span class="stat-value" id="file-size">0B</span>
                 </div>
             </div>
             
@@ -482,7 +496,7 @@ const getCompactEditorHTML = (uuid, content = '') => {
                 <div class="language-selector" id="language-selector">
                     <span id="language-icon">${langConfig.icon}</span>
                     <span id="language-name">${langConfig.name}</span>
-                    <span style="font-size: 8px;">▼</span>
+                    <span style="font-size: 6px;">▼</span>
                     <div class="language-dropdown" id="language-dropdown">
                         ${Object.entries(languageConfigs).map(([key, config]) => 
                             `<div class="language-option ${key === detectedLang ? 'active' : ''}" data-lang="${key}">
@@ -507,10 +521,9 @@ const getCompactEditorHTML = (uuid, content = '') => {
                 class="editor" 
                 id="editor" 
                 placeholder="// Start coding here...
-// This editor supports multiple programming languages
-// Language detection is automatic based on your code
+// Language detection is automatic
 
-console.log('Welcome to Code Editor!');"
+console.log('Welcome!');"
                 spellcheck="false"
             ></textarea>
         </div>
@@ -533,10 +546,11 @@ console.log('Welcome to Code Editor!');"
         let saveTimeout;
         let lastSavedContent = '';
         let isContentChanged = false;
+        let isSaving = false;
 
         const languageConfigs = ${JSON.stringify(languageConfigs)};
 
-        // Update status
+        // Update status with proper state management
         function updateStatus(newStatus) {
             status.className = 'status ' + newStatus;
             switch(newStatus) {
@@ -545,11 +559,17 @@ console.log('Welcome to Code Editor!');"
                     break;
                 case 'saving':
                     statusText.textContent = 'Saving...';
+                    isSaving = true;
                     break;
                 case 'saved':
                     statusText.textContent = 'Saved';
                     lastSavedContent = editor.value;
                     isContentChanged = false;
+                    isSaving = false;
+                    break;
+                case 'error':
+                    statusText.textContent = 'Error';
+                    isSaving = false;
                     break;
             }
         }
@@ -572,7 +592,7 @@ console.log('Welcome to Code Editor!');"
             fileSize.textContent = formatBytes(bytes);
             
             // Check if content changed
-            if (editor.value !== lastSavedContent) {
+            if (editor.value !== lastSavedContent && !isSaving) {
                 if (!isContentChanged) {
                     isContentChanged = true;
                     updateStatus('unsaved');
@@ -582,11 +602,12 @@ console.log('Welcome to Code Editor!');"
 
         // Format bytes
         function formatBytes(bytes) {
-            if (bytes === 0) return '0 B';
+            if (bytes === 0) return '0B';
+            if (bytes < 1024) return bytes + 'B';
             const k = 1024;
             const sizes = ['B', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
-            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + sizes[i];
         }
 
         // Detect language from content
@@ -623,29 +644,48 @@ console.log('Welcome to Code Editor!');"
             });
         }
 
-        // Save content with proper error handling
+        // Save content with improved error handling and debugging
         function saveContent() {
-            if (!isContentChanged) return;
+            if (!isContentChanged || isSaving) {
+                console.log('⏭️ Skip save: changed=' + isContentChanged + ', saving=' + isSaving);
+                return;
+            }
             
+            console.log('💾 Starting save process...');
             updateStatus('saving');
             
-            fetch(location.href, {
+            const contentToSave = editor.value;
+            
+            fetch(window.location.href, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'text/plain; charset=utf-8' },
-                body: editor.value,
+                headers: { 
+                    'Content-Type': 'text/plain; charset=utf-8',
+                    'Cache-Control': 'no-cache'
+                },
+                body: contentToSave,
             })
             .then(response => {
+                console.log('📡 Response status:', response.status);
                 if (response.ok) {
-                    updateStatus('saved');
-                    console.log('✅ Code saved successfully');
+                    return response.json();
                 } else {
-                    updateStatus('unsaved');
-                    console.error('❌ Save failed:', response.status);
+                    throw new Error('HTTP ' + response.status);
                 }
             })
+            .then(result => {
+                console.log('✅ Save successful:', result);
+                updateStatus('saved');
+            })
             .catch(err => {
-                updateStatus('unsaved');
                 console.error('❌ Save failed:', err);
+                updateStatus('error');
+                // Retry after 3 seconds
+                setTimeout(() => {
+                    if (isContentChanged) {
+                        console.log('🔄 Retrying save...');
+                        saveContent();
+                    }
+                }, 3000);
             });
         }
 
@@ -671,7 +711,9 @@ console.log('Welcome to Code Editor!');"
         });
 
         // Load initial content
-        fetch(location.href + '?raw=true')
+        fetch(window.location.href + '?raw=true', {
+            headers: { 'Cache-Control': 'no-cache' }
+        })
         .then(r => r.text())
         .then(content => {
             editor.value = content;
@@ -684,8 +726,11 @@ console.log('Welcome to Code Editor!');"
             if (detected !== currentLanguage) {
                 updateLanguage(detected);
             }
+            
+            console.log('📄 Content loaded:', content.length + ' chars');
         })
-        .catch(() => {
+        .catch(err => {
+            console.log('📄 New file created');
             updateStats();
             updateStatus('saved');
         });
@@ -700,9 +745,12 @@ console.log('Welcome to Code Editor!');"
                 updateLanguage(detected);
             }
             
-            // Auto-save after 1.5 seconds of inactivity
+            // Auto-save after 1 second of inactivity
             clearTimeout(saveTimeout);
-            saveTimeout = setTimeout(saveContent, 1500);
+            saveTimeout = setTimeout(() => {
+                console.log('⏰ Auto-save triggered');
+                saveContent();
+            }, 1000);
         });
 
         editor.addEventListener('scroll', function() {
@@ -741,12 +789,17 @@ console.log('Welcome to Code Editor!');"
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
                 clearTimeout(saveTimeout);
+                console.log('⌨️ Manual save triggered');
                 saveContent();
             }
         });
 
         // Initial stats update
         updateStats();
+        
+        // Debug info
+        console.log('🚀 Code Editor initialized');
+        console.log('📍 URL:', window.location.href);
     </script>
 </body>
 </html>`;
@@ -754,13 +807,14 @@ console.log('Welcome to Code Editor!');"
 
 module.exports = {
     info: {
-        path: '/note/:UUID',
-        title: 'Compact Code Editor API',
-        desc: 'API for creating and editing code with compact interface',
+        path: '/edit/:UUID',
+        title: 'Ultra Compact Code Editor API',
+        desc: 'API for creating and editing code with ultra compact interface',
         example_url: [
-            { method: 'GET', query: '/note/:UUID', desc: 'Open code editor' },
-            { method: 'PUT', query: '/note/:UUID', desc: 'Save code content' },
-            { method: 'DELETE', query: '/note/:UUID', desc: 'Delete code file' }
+            { method: 'GET', query: '/edit/:UUID', desc: 'Open code editor' },
+            { method: 'PUT', query: '/edit/:UUID', desc: 'Save code content' },
+            { method: 'DELETE', query: '/edit/:UUID', desc: 'Delete code file' },
+            { method: 'GET', query: '/raw/:UUID', desc: 'Get raw content' }
         ]
     },
     methods: {
@@ -770,7 +824,7 @@ module.exports = {
             // Generate new UUID if invalid
             if (!uuid || uuid === ':UUID' || uuid.length > 36) {
                 const newUuid = uuidv4();
-                res.redirect('./' + newUuid);
+                res.redirect('/edit/' + newUuid);
                 return;
             }
 
@@ -792,15 +846,17 @@ module.exports = {
             }
 
             // Return raw content for API requests
-            if (req.query.raw === 'true' || !/^Mozilla/.test(req.headers['user-agent'])) {
+            if (req.query.raw === 'true' || req.headers['user-agent']?.includes('curl') || req.headers['user-agent']?.includes('fetch')) {
                 res.set('content-type', 'text/plain');
+                res.set('cache-control', 'no-cache');
                 res.end(text);
                 return;
             }
 
-            // Return compact HTML editor
+            // Return ultra compact HTML editor
             res.set('content-type', 'text/html');
-            res.end(getCompactEditorHTML(uuid, text));
+            res.set('cache-control', 'no-cache');
+            res.end(getUltraCompactEditorHTML(uuid, text));
         },
 
         put: async (req, res) => {
@@ -818,20 +874,33 @@ module.exports = {
                     }
                 } else {
                     const content = Buffer.concat(chunks).toString('utf8');
-                    fs.writeFileSync(filePath, content);
+                    
+                    // Ensure directory exists
+                    if (!fs.existsSync(notesDir)) {
+                        fs.mkdirSync(notesDir, { recursive: true });
+                    }
+                    
+                    // Write content to file
+                    fs.writeFileSync(filePath, content, 'utf8');
                     
                     console.log('💾 Code saved: ' + uuid + ' (' + content.length + ' chars)');
                 }
 
+                // Set proper headers
+                res.set('content-type', 'application/json');
+                res.set('cache-control', 'no-cache');
+                
                 res.json({ 
                     success: true, 
                     message: 'Code saved successfully',
                     uuid: uuid,
-                    timestamp: new Date().toISOString()
+                    timestamp: new Date().toISOString(),
+                    size: Buffer.concat(chunks).length
                 });
             } catch (error) {
-                console.error('Error saving code:', error);
+                console.error('❌ Error saving code:', error);
                 res.status(500).json({ 
+                    success: false,
                     error: 'Failed to save code',
                     message: error.message 
                 });
@@ -865,13 +934,15 @@ module.exports = {
                     });
                 } else {
                     res.status(404).json({ 
+                        success: false,
                         error: 'Code not found',
                         uuid: uuid 
                     });
                 }
             } catch (error) {
-                console.error('Error deleting code:', error);
+                console.error('❌ Error deleting code:', error);
                 res.status(500).json({ 
+                    success: false,
                     error: 'Failed to delete code',
                     message: error.message 
                 });
