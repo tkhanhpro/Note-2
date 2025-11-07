@@ -1,11 +1,12 @@
 /**
  * API GHICHU Client Utilities
  * Enhanced client-side utilities for interacting with the API GHICHU service
+ * Now with TTL support and optimized endpoints
  */
 
 class APIGhichuClient {
     constructor(baseUrl = '') {
-        this.baseUrl = baseUrl;
+        this.baseUrl = baseUrl.replace(/\/$/, '');
         this.defaultHeaders = {
             'Content-Type': 'text/plain; charset=utf-8',
             'Cache-Control': 'no-cache'
@@ -25,20 +26,31 @@ class APIGhichuClient {
     }
 
     /**
-     * Create a new note with optional content
-     * @param {string} content - Initial content for the note
-     * @returns {Promise<{uuid: string, url: string}>} Note creation result
+     * Validate UUID format
+     * @param {string} uuid - UUID to validate
+     * @returns {boolean} True if valid UUID
      */
-    async createNote(content = '') {
+    isValidUUID(uuid) {
+        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        return uuidRegex.test(uuid);
+    }
+
+    /**
+     * Create a new note with optional content and TTL
+     * @param {string} content - Initial content for the note
+     * @param {number} ttl - Time to live in milliseconds (default: 24 hours)
+     * @returns {Promise<{uuid: string, editUrl: string, rawUrl: string}>} Note creation result
+     */
+    async createNote(content = '', ttl = 24 * 60 * 60 * 1000) {
         const uuid = this.generateUUID();
         
         if (content) {
-            await this.saveNote(uuid, content);
+            await this.saveNote(uuid, content, ttl);
         }
         
         return {
             uuid: uuid,
-            url: `${this.baseUrl}/edit/${uuid}`,
+            editUrl: `${this.baseUrl}/edit/${uuid}`,
             rawUrl: `${this.baseUrl}/raw/${uuid}`
         };
     }
@@ -49,6 +61,10 @@ class APIGhichuClient {
      * @returns {Promise<string>} Note content
      */
     async getNote(uuid) {
+        if (!this.isValidUUID(uuid)) {
+            throw new Error('Invalid UUID format');
+        }
+
         try {
             const response = await fetch(`${this.baseUrl}/raw/${uuid}`, {
                 method: 'GET',
@@ -69,14 +85,19 @@ class APIGhichuClient {
     }
 
     /**
-     * Save note content
+     * Save note content with TTL
      * @param {string} uuid - Note UUID
      * @param {string} content - Note content to save
+     * @param {number} ttl - Time to live in milliseconds
      * @returns {Promise<Object>} Save result
      */
-    async saveNote(uuid, content) {
+    async saveNote(uuid, content, ttl = 24 * 60 * 60 * 1000) {
+        if (!this.isValidUUID(uuid)) {
+            throw new Error('Invalid UUID format');
+        }
+
         try {
-            const response = await fetch(`${this.baseUrl}/edit/${uuid}`, {
+            const response = await fetch(`${this.baseUrl}/edit/${uuid}?ttl=${ttl}`, {
                 method: 'PUT',
                 headers: this.defaultHeaders,
                 body: content
@@ -102,6 +123,10 @@ class APIGhichuClient {
      * @returns {Promise<Object>} Delete result
      */
     async deleteNote(uuid) {
+        if (!this.isValidUUID(uuid)) {
+            throw new Error('Invalid UUID format');
+        }
+
         try {
             const response = await fetch(`${this.baseUrl}/edit/${uuid}`, {
                 method: 'DELETE',
@@ -126,11 +151,39 @@ class APIGhichuClient {
     }
 
     /**
+     * Get note metadata
+     * @param {string} uuid - Note UUID
+     * @returns {Promise<Object>} Note metadata
+     */
+    async getNoteMeta(uuid) {
+        if (!this.isValidUUID(uuid)) {
+            throw new Error('Invalid UUID format');
+        }
+
+        try {
+            const response = await fetch(`${this.baseUrl}/edit/${uuid}?meta=true`);
+            
+            if (response.ok) {
+                return await response.json();
+            } else {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+        } catch (error) {
+            console.error('Error getting note metadata:', error);
+            throw error;
+        }
+    }
+
+    /**
      * Check if a note exists
      * @param {string} uuid - Note UUID
      * @returns {Promise<boolean>} True if note exists
      */
     async noteExists(uuid) {
+        if (!this.isValidUUID(uuid)) {
+            return false;
+        }
+
         try {
             const response = await fetch(`${this.baseUrl}/raw/${uuid}`, {
                 method: 'HEAD',
@@ -180,6 +233,34 @@ class APIGhichuClient {
     }
 
     /**
+     * Format TTL to human readable format
+     * @param {number} ttl - Time to live in milliseconds
+     * @returns {string} Formatted TTL string
+     */
+    formatTTL(ttl) {
+        if (ttl === 0) return 'Never';
+        
+        const seconds = Math.floor(ttl / 1000);
+        const minutes = Math.floor(seconds / 60);
+        const hours = Math.floor(minutes / 60);
+        const days = Math.floor(hours / 24);
+        
+        if (days > 0) return `${days} day${days > 1 ? 's' : ''}`;
+        if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''}`;
+        if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''}`;
+        return `${seconds} second${seconds > 1 ? 's' : ''}`;
+    }
+
+    /**
+     * Calculate expiry time from TTL
+     * @param {number} ttl - Time to live in milliseconds
+     * @returns {Date} Expiry date
+     */
+    calculateExpiry(ttl) {
+        return new Date(Date.now() + ttl);
+    }
+
+    /**
      * Detect programming language from content
      * @param {string} content - Code content
      * @returns {string} Detected language
@@ -216,7 +297,7 @@ class APIGhichuClient {
     }
 
     /**
-     * Setup auto-save functionality for a textarea
+     * Setup auto-save functionality for a textarea with TTL support
      * @param {HTMLTextAreaElement} textarea - Textarea element
      * @param {string} uuid - Note UUID
      * @param {Object} options - Auto-save options
@@ -224,25 +305,38 @@ class APIGhichuClient {
     setupAutoSave(textarea, uuid, options = {}) {
         const {
             delay = 1000,
+            ttl = 24 * 60 * 60 * 1000,
             onSaving = () => {},
             onSaved = () => {},
             onError = () => {},
-            onStatsUpdate = () => {}
+            onStatsUpdate = () => {},
+            onTTLUpdate = () => {}
         } = options;
 
         let saveTimeout;
         let lastSavedContent = textarea.value;
         let isContentChanged = false;
+        let currentTTL = ttl;
 
         const saveContent = async () => {
             if (!isContentChanged) return;
 
             try {
                 onSaving();
-                await this.saveNote(uuid, textarea.value);
+                await this.saveNote(uuid, textarea.value, currentTTL);
                 lastSavedContent = textarea.value;
                 isContentChanged = false;
                 onSaved();
+                
+                // Update TTL info after save
+                try {
+                    const meta = await this.getNoteMeta(uuid);
+                    if (meta && meta.expiresAt) {
+                        onTTLUpdate(meta.expiresAt);
+                    }
+                } catch (e) {
+                    // Ignore meta errors
+                }
             } catch (error) {
                 onError(error);
             }
@@ -277,6 +371,8 @@ class APIGhichuClient {
 
         return {
             save: saveContent,
+            setTTL: (newTTL) => { currentTTL = newTTL; },
+            getTTL: () => currentTTL,
             destroy: () => {
                 clearTimeout(saveTimeout);
                 textarea.removeEventListener('input', handleInput);
@@ -388,6 +484,26 @@ class APIGhichuClient {
             };
         }
     }
+
+    /**
+     * Get service statistics
+     * @returns {Promise<Object>} Service statistics
+     */
+    async getStats() {
+        try {
+            // This would need to be implemented on the server side
+            const response = await fetch(`${this.baseUrl}/stats`);
+            
+            if (response.ok) {
+                return await response.json();
+            } else {
+                throw new Error(`HTTP ${response.status}`);
+            }
+        } catch (error) {
+            console.error('Error getting stats:', error);
+            throw error;
+        }
+    }
 }
 
 // Export for both Node.js and browser environments
@@ -400,6 +516,5 @@ if (typeof module !== 'undefined' && module.exports) {
 // Auto-initialize for browser
 if (typeof window !== 'undefined') {
     window.apiGhichu = new APIGhichuClient();
-    console.log('🚀 API GHICHU Client initialized');
+    console.log('🚀 API GHICHU Client initialized with TTL support');
 }
-
