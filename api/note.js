@@ -23,7 +23,7 @@ const updateNoteExpiry = (uuid, ttl = DEFAULT_TTL) => {
     createdAt: Date.now(),
     expiresAt: Date.now() + ttl,
     lastAccessed: Date.now(),
-    ttl: Math.min(Math.max(ttl, MIN_TTL), MAX_TTL) // Clamp between min and max
+    ttl: Math.min(Math.max(ttl, MIN_TTL), MAX_TTL)
   }
   
   fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2))
@@ -52,72 +52,19 @@ const formatTTL = (ttl) => {
   }
 }
 
-module.exports = {
-  info: {
-    path: "/:action(raw|edit)/:uuid",
-    title: "Enhanced Note API",
-    desc: "API for creating, retrieving and editing notes with TTL support",
-    example_url: [
-      { method: "GET", query: "/edit/:uuid", desc: "Edit a note (web interface)" },
-      { method: "GET", query: "/raw/:uuid", desc: "Get raw note content" },
-      { method: "PUT", query: "/edit/:uuid", desc: "Create or update a note" },
-      { method: "DELETE", query: "/edit/:uuid", desc: "Delete a note" },
-    ],
-  },
-  methods: {
-    get: (req, res) => {
-      const { action, uuid } = req.params
-
-      // Validate UUID
-      if (!isValidUUID(uuid)) {
-        if (action === 'edit') {
-          return res.redirect(`/edit/${uuidv4()}`)
-        } else {
-          return res.status(400).json({ error: 'Invalid UUID format' })
-        }
-      }
-
-      const contentPath = getNoteContentPath(uuid)
-      const contentExists = fs.existsSync(contentPath)
-
-      // Update last accessed time
-      if (contentExists) {
-        const meta = getNoteMeta(uuid)
-        if (meta) {
-          meta.lastAccessed = Date.now()
-          fs.writeFileSync(getNoteMetaPath(uuid), JSON.stringify(meta, null, 2))
-        }
-      }
-
-      if (action === 'raw') {
-        // Raw content endpoint
-        if (!contentExists) {
-          return res.status(404).json({ error: 'Note not found' })
-        }
-        
-        res.set("content-type", "text/plain; charset=utf-8")
-        res.set("Cache-Control", "no-cache")
-        res.end(fs.readFileSync(contentPath, "utf8"))
-        return
-      }
-
-      if (action === 'edit') {
-        // Web editor interface
-        const content = contentExists ? fs.readFileSync(contentPath, "utf8") : '';
-        const meta = getNoteMeta(uuid);
-        const currentTTL = meta ? meta.ttl : DEFAULT_TTL;
-        
-        res.set("content-type", "text/html")
-        res.end(`<!DOCTYPE html>
+// HTML template for editor
+const getEditorHTML = (uuid, content, currentTTL) => {
+  const escapedContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  
+  return `<!DOCTYPE html>
 <html data-theme="dark" lang="vi">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${contentExists ? 'Chỉnh sửa: ' + uuid : 'Ghi chú mới'} - API GHICHU</title>
+    <title>${content ? 'Chỉnh sửa: ' + uuid : 'Ghi chú mới'} - API GHICHU</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         :root {
-            /* Modern color scheme */
             --primary: #6366f1;
             --primary-dark: #4f46e5;
             --primary-light: #8b5cf6;
@@ -126,7 +73,6 @@ module.exports = {
             --danger: #ef4444;
             --warning: #f59e0b;
             
-            /* Dark theme */
             --bg-dark: #0f172a;
             --surface-dark: #1e293b;
             --surface-light-dark: #334155;
@@ -134,7 +80,6 @@ module.exports = {
             --text-secondary-dark: #94a3b8;
             --border-dark: #334155;
             
-            /* Light theme */
             --bg-light: #ffffff;
             --surface-light: #f8fafc;
             --surface-light-light: #e2e8f0;
@@ -178,7 +123,6 @@ module.exports = {
             overflow: hidden;
         }
         
-        /* Modern Header */
         .editor-header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
@@ -242,7 +186,6 @@ module.exports = {
             flex-wrap: wrap;
         }
         
-        /* Modern Controls */
         .control-group {
             display: flex;
             align-items: center;
@@ -316,7 +259,6 @@ module.exports = {
             background: #05b589;
         }
         
-        /* Editor Container - Fixed layout */
         .editor-container {
             display: flex;
             flex: 1;
@@ -369,7 +311,6 @@ module.exports = {
             tab-size: 4;
         }
         
-        /* Custom Scrollbar */
         .editor-textarea::-webkit-scrollbar {
             width: 8px;
         }
@@ -387,7 +328,6 @@ module.exports = {
             background: var(--text-secondary);
         }
         
-        /* Modern Status Bar */
         .status-bar {
             background: var(--surface);
             border-top: 1px solid var(--border);
@@ -438,18 +378,20 @@ module.exports = {
             border: 1px solid var(--border);
         }
         
-        /* Animations */
+        .language-badge {
+            background: var(--primary);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.7rem;
+            font-weight: 500;
+        }
+        
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
         
-        @keyframes slideIn {
-            from { transform: translateY(-10px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
-        }
-        
-        /* Responsive */
         @media (max-width: 768px) {
             .editor-header {
                 padding: 0.75rem 1rem;
@@ -469,20 +411,9 @@ module.exports = {
                 flex: 1;
             }
         }
-        
-        /* Syntax highlighting preview */
-        .language-badge {
-            background: var(--primary);
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 500;
-        }
     </style>
 </head>
 <body>
-    <!-- Modern Header -->
     <div class="editor-header">
         <div class="header-left">
             <div class="logo">📝</div>
@@ -533,7 +464,6 @@ module.exports = {
         </div>
     </div>
     
-    <!-- Fixed Editor Container -->
     <div class="editor-container">
         <div class="line-numbers" id="lineNumbers">
             <div class="line-number">1</div>
@@ -544,11 +474,10 @@ module.exports = {
                 class="editor-textarea" 
                 placeholder="Bắt đầu nhập nội dung ghi chú của bạn...&#10;Ctrl+S để lưu thủ công • Tab để thụt lề"
                 spellcheck="false"
-            >${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</textarea>
+            >${escapedContent}</textarea>
         </div>
     </div>
     
-    <!-- Modern Status Bar -->
     <div class="status-bar">
         <div class="status-left">
             <div class="status-item">
@@ -590,10 +519,8 @@ module.exports = {
         let isContentChanged = false;
         let originalContent = editor.value;
 
-        // Set initial TTL selection
-        ttlSelect.value = currentTtl;
+        ttlSelect.value = currentTtl.toString();
 
-        // Theme management
         function toggleTheme() {
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
@@ -603,13 +530,11 @@ module.exports = {
 
         themeToggle.addEventListener('click', toggleTheme);
 
-        // Load saved theme
         const savedTheme = localStorage.getItem('editor-theme') || 'dark';
         html.setAttribute('data-theme', savedTheme);
 
-        // Line numbers with fixed positioning
         function updateLineNumbers() {
-            const lines = editor.value.split('\\n');
+            const lines = editor.value.split('\\\\n');
             lineNumbers.innerHTML = '';
             
             for (let i = 0; i < lines.length; i++) {
@@ -620,23 +545,21 @@ module.exports = {
             }
         }
 
-        // Cursor position
         function updateCursorPosition() {
             const text = editor.value;
             const position = editor.selectionStart;
             
-            const lines = text.substr(0, position).split('\\n');
+            const lines = text.substr(0, position).split('\\\\n');
             const lineNumber = lines.length;
             const columnNumber = lines[lines.length - 1].length + 1;
             
             cursorPosition.textContent = 'Dòng ' + lineNumber + ', Cột ' + columnNumber;
         }
 
-        // File statistics
         function updateFileStats() {
             const content = editor.value;
-            const lines = content.split('\\n').length;
-            const words = content.trim() ? content.trim().split(/\\s+/).length : 0;
+            const lines = content.split('\\\\n').length;
+            const words = content.trim() ? content.trim().split(/\\\\s+/).length : 0;
             const chars = content.length;
             const size = new Blob([content]).size;
             
@@ -651,20 +574,19 @@ module.exports = {
             return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
         }
 
-        // Language detection - FIXED REGEX PATTERNS
         function detectLanguage(content) {
             if (!content || content.trim().length === 0) return 'text';
             
             const patterns = {
-                javascript: [/function\\s+\\w+\\s*\\(/i, /const\\s+\\w+/i, /let\\s+\\w+/i, /var\\s+\\w+/i],
-                python: [/def\\s+\\w+\\s*\\(/i, /import\\s+\\w+/i, /from\\s+\\w+\\s+import/i],
+                javascript: [/function\\\\s+\\\\w+\\\\s*\\\\(/i, /const\\\\s+\\\\w+/i, /let\\\\s+\\\\w+/i, /var\\\\s+\\\\w+/i],
+                python: [/def\\\\s+\\\\w+\\\\s*\\\\(/i, /import\\\\s+\\\\w+/i, /from\\\\s+\\\\w+\\\\s+import/i],
                 html: [/<!doctype/i, /<html>/i, /<head>/i, /<body>/i],
-                css: [/\\w+\\s*\\{[^}]*\\}/m, /@media/i, /@import/i],
-                json: [/^\\s*\\{/, /^\\s*\\[/, /"[\\w-]+"\\s*:/],
-                markdown: [/^#+\\s/m, /\\*\\*.*\\*\\*/m, /\\`\\`\\`/m] // FIXED: Properly escaped backticks
+                css: [/\\\\w+\\\\s*\\\\{[^}]*\\\\}/m, /@media/i, /@import/i],
+                json: [/^\\\\s*\\\\{/, /^\\\\s*\\\\[/, /"[\\\\w-]+"\\\\s*:/],
+                markdown: [/^#+\\\\s/m, /\\\\*\\\\*.*\\\\*\\\\*/m, /\\`\\`\\`/m]
             };
 
-            const firstLines = content.split('\\n').slice(0, 5).join(' ').toLowerCase();
+            const firstLines = content.split('\\\\n').slice(0, 5).join(' ').toLowerCase();
             
             for (const [lang, langPatterns] of Object.entries(patterns)) {
                 if (langPatterns.some(pattern => pattern.test(firstLines))) {
@@ -684,7 +606,6 @@ module.exports = {
             }
         }
 
-        // Auto-save with TTL
         function saveNote() {
             if (!isContentChanged) return;
 
@@ -719,13 +640,11 @@ module.exports = {
             });
         }
 
-        // Update expiry info
         function updateExpiryInfo() {
             const ttlText = ttlSelect.options[ttlSelect.selectedIndex].text;
             expiryInfo.textContent = 'Hết hạn sau: ' + ttlText;
         }
 
-        // Delete note
         deleteBtn.addEventListener('click', () => {
             if (confirm('Bạn có chắc chắn muốn xóa ghi chú này? Hành động này không thể hoàn tác.')) {
                 fetch('/edit/' + NOTE_UUID, {
@@ -736,24 +655,20 @@ module.exports = {
             }
         });
 
-        // Manual save
         saveBtn.addEventListener('click', () => {
             clearTimeout(autoSaveTimeout);
             saveNote();
         });
 
-        // TTL change
         ttlSelect.addEventListener('change', () => {
             currentTtl = parseInt(ttlSelect.value);
             updateExpiryInfo();
-            // Auto-save with new TTL if content changed
             if (isContentChanged) {
                 clearTimeout(autoSaveTimeout);
                 autoSaveTimeout = setTimeout(saveNote, 500);
             }
         });
 
-        // Editor event listeners
         function handleContentChange() {
             updateLineNumbers();
             updateCursorPosition();
@@ -770,7 +685,6 @@ module.exports = {
         editor.addEventListener('input', handleContentChange);
         editor.addEventListener('paste', handleContentChange);
 
-        // Tab support
         editor.addEventListener('keydown', (e) => {
             if (e.key === 'Tab') {
                 e.preventDefault();
@@ -782,7 +696,6 @@ module.exports = {
                 handleContentChange();
             }
             
-            // Ctrl+S to save
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
                 clearTimeout(autoSaveTimeout);
@@ -793,12 +706,10 @@ module.exports = {
         editor.addEventListener('click', updateCursorPosition);
         editor.addEventListener('keyup', updateCursorPosition);
 
-        // Sync scroll between editor and line numbers
         editor.addEventListener('scroll', () => {
             lineNumbers.scrollTop = editor.scrollTop;
         });
 
-        // Initialize
         updateLineNumbers();
         updateCursorPosition();
         updateFileStats();
@@ -807,11 +718,66 @@ module.exports = {
         statusIndicator.style.backgroundColor = '#06d6a0';
         statusText.textContent = 'Sẵn sàng';
 
-        // Focus editor
         editor.focus();
     </script>
 </body>
-</html>`)
+</html>`;
+}
+
+module.exports = {
+  info: {
+    path: "/:action(raw|edit)/:uuid",
+    title: "Enhanced Note API",
+    desc: "API for creating, retrieving and editing notes with TTL support",
+    example_url: [
+      { method: "GET", query: "/edit/:uuid", desc: "Edit a note (web interface)" },
+      { method: "GET", query: "/raw/:uuid", desc: "Get raw note content" },
+      { method: "PUT", query: "/edit/:uuid", desc: "Create or update a note" },
+      { method: "DELETE", query: "/edit/:uuid", desc: "Delete a note" },
+    ],
+  },
+  methods: {
+    get: (req, res) => {
+      const { action, uuid } = req.params
+
+      if (!isValidUUID(uuid)) {
+        if (action === 'edit') {
+          return res.redirect(`/edit/${uuidv4()}`)
+        } else {
+          return res.status(400).json({ error: 'Invalid UUID format' })
+        }
+      }
+
+      const contentPath = getNoteContentPath(uuid)
+      const contentExists = fs.existsSync(contentPath)
+
+      if (contentExists) {
+        const meta = getNoteMeta(uuid)
+        if (meta) {
+          meta.lastAccessed = Date.now()
+          fs.writeFileSync(getNoteMetaPath(uuid), JSON.stringify(meta, null, 2))
+        }
+      }
+
+      if (action === 'raw') {
+        if (!contentExists) {
+          return res.status(404).json({ error: 'Note not found' })
+        }
+        
+        res.set("content-type", "text/plain; charset=utf-8")
+        res.set("Cache-Control", "no-cache")
+        res.end(fs.readFileSync(contentPath, "utf8"))
+        return
+      }
+
+      if (action === 'edit') {
+        const content = contentExists ? fs.readFileSync(contentPath, "utf8") : '';
+        const meta = getNoteMeta(uuid);
+        const currentTTL = meta ? meta.ttl : DEFAULT_TTL;
+        
+        res.set("content-type", "text/html")
+        const html = getEditorHTML(uuid, content, currentTTL)
+        res.end(html)
       }
     },
 
@@ -819,7 +785,6 @@ module.exports = {
       const { uuid } = req.params
       let ttl = parseInt(req.query.ttl) || DEFAULT_TTL
 
-      // Clamp TTL between 1 hour and 10 days
       ttl = Math.min(Math.max(ttl, MIN_TTL), MAX_TTL)
 
       if (!isValidUUID(uuid)) {
