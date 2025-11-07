@@ -52,6 +52,42 @@ const formatTTL = (ttl) => {
   }
 }
 
+// Simple language detection patterns - FIXED REGEX
+const languagePatterns = {
+  javascript: [
+    /function\s+\w+\s*\(/i,
+    /const\s+\w+/i, 
+    /let\s+\w+/i,
+    /var\s+\w+/i
+  ],
+  python: [
+    /def\s+\w+\s*\(/i,
+    /import\s+\w+/i,
+    /from\s+\w+\s+import/i
+  ],
+  html: [
+    /<!doctype/i,
+    /<html>/i,
+    /<head>/i, 
+    /<body>/i
+  ],
+  css: [
+    /\w+\s*\{[^}]*\}/m,
+    /@media/i,
+    /@import/i
+  ],
+  json: [
+    /^\s*\{/,
+    /^\s*\[/,
+    /"[\w-]+"\s*:/
+  ],
+  markdown: [
+    /^#+\s/m,
+    /\*\*.*\*\*/m,
+    /```/m
+  ]
+};
+
 // HTML template for editor
 const getEditorHTML = (uuid, content, currentTTL) => {
   const escapedContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -472,7 +508,7 @@ const getEditorHTML = (uuid, content, currentTTL) => {
             <textarea 
                 id="editor" 
                 class="editor-textarea" 
-                placeholder="Bắt đầu nhập nội dung ghi chú của bạn...&#10;Ctrl+S để lưu thủ công • Tab để thụt lề"
+                placeholder="Bắt đầu nhập nội dung ghi chú của bạn..."
                 spellcheck="false"
             >${escapedContent}</textarea>
         </div>
@@ -534,7 +570,7 @@ const getEditorHTML = (uuid, content, currentTTL) => {
         html.setAttribute('data-theme', savedTheme);
 
         function updateLineNumbers() {
-            const lines = editor.value.split('\\\\n');
+            const lines = editor.value.split('\\n');
             lineNumbers.innerHTML = '';
             
             for (let i = 0; i < lines.length; i++) {
@@ -549,7 +585,7 @@ const getEditorHTML = (uuid, content, currentTTL) => {
             const text = editor.value;
             const position = editor.selectionStart;
             
-            const lines = text.substr(0, position).split('\\\\n');
+            const lines = text.substr(0, position).split('\\n');
             const lineNumber = lines.length;
             const columnNumber = lines[lines.length - 1].length + 1;
             
@@ -558,8 +594,8 @@ const getEditorHTML = (uuid, content, currentTTL) => {
 
         function updateFileStats() {
             const content = editor.value;
-            const lines = content.split('\\\\n').length;
-            const words = content.trim() ? content.trim().split(/\\\\s+/).length : 0;
+            const lines = content.split('\\n').length;
+            const words = content.trim() ? content.trim().split(/\\s+/).length : 0;
             const chars = content.length;
             const size = new Blob([content]).size;
             
@@ -578,15 +614,15 @@ const getEditorHTML = (uuid, content, currentTTL) => {
             if (!content || content.trim().length === 0) return 'text';
             
             const patterns = {
-                javascript: [/function\\\\s+\\\\w+\\\\s*\\\\(/i, /const\\\\s+\\\\w+/i, /let\\\\s+\\\\w+/i, /var\\\\s+\\\\w+/i],
-                python: [/def\\\\s+\\\\w+\\\\s*\\\\(/i, /import\\\\s+\\\\w+/i, /from\\\\s+\\\\w+\\\\s+import/i],
+                javascript: [/function\\s+\\w+\\s*\\(/i, /const\\s+\\w+/i, /let\\s+\\w+/i, /var\\s+\\w+/i],
+                python: [/def\\s+\\w+\\s*\\(/i, /import\\s+\\w+/i, /from\\s+\\w+\\s+import/i],
                 html: [/<!doctype/i, /<html>/i, /<head>/i, /<body>/i],
-                css: [/\\\\w+\\\\s*\\\\{[^}]*\\\\}/m, /@media/i, /@import/i],
-                json: [/^\\\\s*\\\\{/, /^\\\\s*\\\\[/, /"[\\\\w-]+"\\\\s*:/],
-                markdown: [/^#+\\\\s/m, /\\\\*\\\\*.*\\\\*\\\\*/m, /\\`\\`\\`/m]
+                css: [/\\w+\\s*\\{[^}]*\\}/m, /@media/i, /@import/i],
+                json: [/^\\s*\\{/, /^\\s*\\[/, /"[\\w-]+"\\s*:/],
+                markdown: [/^#+\\s/m, /\\*\\*.*\\*\\*/m, /\\`\\`\\`/m]
             };
 
-            const firstLines = content.split('\\\\n').slice(0, 5).join(' ').toLowerCase();
+            const firstLines = content.split('\\n').slice(0, 5).join(' ').toLowerCase();
             
             for (const [lang, langPatterns] of Object.entries(patterns)) {
                 if (langPatterns.some(pattern => pattern.test(firstLines))) {
