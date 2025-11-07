@@ -52,7 +52,7 @@ const formatTTL = (ttl) => {
   }
 }
 
-// Simple language detection patterns - FIXED REGEX (no double escaping)
+// Simple language detection patterns - FIXED REGEX
 const languagePatterns = {
   javascript: [
     /function\s+\w+\s*\(/i,
@@ -452,7 +452,7 @@ const getEditorHTML = (uuid, content, currentTTL) => {
 <body>
     <div class="editor-header">
         <div class="header-left">
-            <div class="logo">Pen</div>
+            <div class="logo">📝</div>
             <div class="editor-info">
                 <h1>API GHICHU Editor</h1>
                 <div class="editor-subtitle">
@@ -570,8 +570,9 @@ const getEditorHTML = (uuid, content, currentTTL) => {
         html.setAttribute('data-theme', savedTheme);
 
         function updateLineNumbers() {
-            const lines = editor.value.split('\n');
+            const lines = editor.value.split('\\n');
             lineNumbers.innerHTML = '';
+            
             for (let i = 0; i < lines.length; i++) {
                 const lineNumber = document.createElement('div');
                 lineNumber.className = 'line-number';
@@ -583,18 +584,21 @@ const getEditorHTML = (uuid, content, currentTTL) => {
         function updateCursorPosition() {
             const text = editor.value;
             const position = editor.selectionStart;
-            const lines = text.substring(0, position).split('\n');
+            
+            const lines = text.substr(0, position).split('\\n');
             const lineNumber = lines.length;
             const columnNumber = lines[lines.length - 1].length + 1;
+            
             cursorPosition.textContent = 'Dòng ' + lineNumber + ', Cột ' + columnNumber;
         }
 
         function updateFileStats() {
             const content = editor.value;
-            const lines = content.split('\n').length;
-            const words = content.trim() ? content.trim().split(/\s+/).length : 0;
+            const lines = content.split('\\n').length;
+            const words = content.trim() ? content.trim().split(/\\s+/).length : 0;
             const chars = content.length;
             const size = new Blob([content]).size;
+            
             fileStats.textContent = lines + ' dòng • ' + words + ' từ • ' + chars + ' ký tự • ' + formatBytes(size);
         }
 
@@ -615,10 +619,10 @@ const getEditorHTML = (uuid, content, currentTTL) => {
                 html: [/<!doctype/i, /<html>/i, /<head>/i, /<body>/i],
                 css: [/\\w+\\s*\\{[^}]*\\}/m, /@media/i, /@import/i],
                 json: [/^\\s*\\{/, /^\\s*\\[/, /"[\\w-]+"\\s*:/],
-                markdown: [/^#+\\s/m, /\\*\\*.*\\*\\*/m, /\\`\\`\\`/m]
+                markdown: [/^#+\\s/m, /\\*\\*.*\\*\\*/m, /\`\`\`/m]
             };
 
-            const firstLines = content.split('\n').slice(0, 5).join(' ').toLowerCase();
+            const firstLines = content.split('\\n').slice(0, 5).join(' ').toLowerCase();
             
             for (const [lang, langPatterns] of Object.entries(patterns)) {
                 if (langPatterns.some(pattern => pattern.test(firstLines))) {
@@ -656,6 +660,7 @@ const getEditorHTML = (uuid, content, currentTTL) => {
                     statusText.textContent = 'Đã lưu';
                     isContentChanged = false;
                     originalContent = editor.value;
+                    
                     setTimeout(() => {
                         if (statusText.textContent === 'Đã lưu') {
                             statusText.textContent = 'Sẵn sàng';
@@ -721,10 +726,12 @@ const getEditorHTML = (uuid, content, currentTTL) => {
                 e.preventDefault();
                 const start = editor.selectionStart;
                 const end = editor.selectionEnd;
+                
                 editor.value = editor.value.substring(0, start) + '    ' + editor.value.substring(end);
                 editor.selectionStart = editor.selectionEnd = start + 4;
                 handleContentChange();
             }
+            
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
                 clearTimeout(autoSaveTimeout);
@@ -746,6 +753,7 @@ const getEditorHTML = (uuid, content, currentTTL) => {
         updateExpiryInfo();
         statusIndicator.style.backgroundColor = '#06d6a0';
         statusText.textContent = 'Sẵn sàng';
+
         editor.focus();
     </script>
 </body>
@@ -819,7 +827,7 @@ module.exports = {
         return res.status(400).json({ error: 'Invalid UUID format' })
       }
 
-      const content = req.body || '';
+      const content = req.body
       const contentPath = getNoteContentPath(uuid)
 
       try {
