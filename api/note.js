@@ -52,42 +52,6 @@ const formatTTL = (ttl) => {
   }
 }
 
-// Simple language detection patterns - FIXED REGEX
-const languagePatterns = {
-  javascript: [
-    /function\s+\w+\s*\(/i,
-    /const\s+\w+/i, 
-    /let\s+\w+/i,
-    /var\s+\w+/i
-  ],
-  python: [
-    /def\s+\w+\s*\(/i,
-    /import\s+\w+/i,
-    /from\s+\w+\s+import/i
-  ],
-  html: [
-    /<!doctype/i,
-    /<html>/i,
-    /<head>/i, 
-    /<body>/i
-  ],
-  css: [
-    /\w+\s*\{[^}]*\}/m,
-    /@media/i,
-    /@import/i
-  ],
-  json: [
-    /^\s*\{/,
-    /^\s*\[/,
-    /"[\w-]+"\s*:/
-  ],
-  markdown: [
-    /^#+\s/m,
-    /\*\*.*\*\*/m,
-    /```/m
-  ]
-};
-
 // HTML template for editor
 const getEditorHTML = (uuid, content, currentTTL) => {
   const escapedContent = content.replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -159,25 +123,34 @@ const getEditorHTML = (uuid, content, currentTTL) => {
             overflow: hidden;
         }
         
+        /* Header Styles - Improved for Mobile */
         .editor-header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 1rem 1.5rem;
+            padding: 0.75rem 1rem;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
+            flex-direction: column;
+            gap: 0.75rem;
             backdrop-filter: blur(10px);
             position: sticky;
             top: 0;
             z-index: 100;
+            min-height: auto;
+        }
+        
+        .header-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
         }
         
         .header-left {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 0.75rem;
+            flex: 1;
+            min-width: 0;
         }
         
         .logo {
@@ -190,35 +163,126 @@ const getEditorHTML = (uuid, content, currentTTL) => {
             justify-content: center;
             font-size: 0.9rem;
             color: white;
+            flex-shrink: 0;
+        }
+        
+        .editor-info {
+            min-width: 0;
+            flex: 1;
         }
         
         .editor-info h1 {
-            font-size: 1.1rem;
+            font-size: 1rem;
             font-weight: 600;
-            margin-bottom: 0.25rem;
+            margin-bottom: 0.2rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .editor-subtitle {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
         
         .note-id {
             font-family: 'Fira Code', monospace;
             background: var(--surface-light);
-            padding: 0.25rem 0.5rem;
+            padding: 0.2rem 0.4rem;
             border-radius: 4px;
-            font-size: 0.75rem;
+            font-size: 0.7rem;
             border: 1px solid var(--border);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 120px;
         }
         
         .header-right {
             display: flex;
             align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
+        }
+        
+        /* Info Bar Styles */
+        .info-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.5rem 0;
+            border-top: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+        
+        .info-left {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            white-space: nowrap;
+        }
+        
+        .status-indicator {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            flex-shrink: 0;
+        }
+        
+        .status-indicator.saving {
+            background: var(--warning);
+            animation: pulse 1s infinite;
+        }
+        
+        .status-indicator.error {
+            background: var(--danger);
+        }
+        
+        .file-stats {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.7rem;
+        }
+        
+        .expiry-info {
+            background: var(--surface-light);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+            font-size: 0.7rem;
+        }
+        
+        .language-badge {
+            background: var(--primary);
+            color: white;
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-size: 0.65rem;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+        
+        /* Controls Bar */
+        .controls-bar {
+            display: flex;
+            align-items: center;
             gap: 0.75rem;
+            justify-content: space-between;
             flex-wrap: wrap;
         }
         
@@ -227,41 +291,53 @@ const getEditorHTML = (uuid, content, currentTTL) => {
             align-items: center;
             gap: 0.5rem;
             background: var(--surface-light);
-            padding: 0.5rem;
-            border-radius: 8px;
+            padding: 0.4rem 0.6rem;
+            border-radius: 6px;
             border: 1px solid var(--border);
+            flex: 1;
+            min-width: 0;
         }
         
         .control-label {
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             color: var(--text-secondary);
             white-space: nowrap;
+            flex-shrink: 0;
         }
         
         .ttl-select {
             background: var(--bg);
             color: var(--text);
             border: 1px solid var(--border);
-            padding: 0.375rem 0.75rem;
-            border-radius: 6px;
-            font-size: 0.8rem;
-            min-width: 100px;
+            padding: 0.3rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .btn-group {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-shrink: 0;
         }
         
         .btn {
             background: var(--primary);
             color: white;
             border: none;
-            padding: 0.5rem 1rem;
-            border-radius: 8px;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 0.8rem;
+            font-size: 0.75rem;
             font-weight: 500;
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.4rem;
             transition: all 0.2s ease;
             text-decoration: none;
+            flex-shrink: 0;
         }
         
         .btn:hover {
@@ -295,25 +371,28 @@ const getEditorHTML = (uuid, content, currentTTL) => {
             background: #05b589;
         }
         
+        /* Editor Container */
         .editor-container {
             display: flex;
             flex: 1;
             overflow: hidden;
             position: relative;
+            background: var(--bg);
         }
         
         .line-numbers {
             background: var(--surface);
             color: var(--text-secondary);
-            padding: 1rem 0.75rem;
+            padding: 1rem 0.5rem;
             text-align: right;
             user-select: none;
             border-right: 1px solid var(--border);
             overflow: hidden;
-            min-width: 60px;
+            min-width: 50px;
             font-family: 'Fira Code', monospace;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             line-height: 1.5;
+            flex-shrink: 0;
         }
         
         .line-number {
@@ -328,6 +407,7 @@ const getEditorHTML = (uuid, content, currentTTL) => {
             display: flex;
             position: relative;
             background: var(--bg);
+            min-width: 0;
         }
         
         .editor-textarea {
@@ -338,17 +418,18 @@ const getEditorHTML = (uuid, content, currentTTL) => {
             border: none;
             resize: none;
             outline: none;
-            padding: 1rem 1.5rem;
+            padding: 1rem;
             font-family: 'Fira Code', 'Cascadia Code', monospace;
-            font-size: 0.875rem;
+            font-size: 0.85rem;
             line-height: 1.5;
             white-space: pre;
             overflow: auto;
             tab-size: 4;
+            min-width: 0;
         }
         
         .editor-textarea::-webkit-scrollbar {
-            width: 8px;
+            width: 6px;
         }
         
         .editor-textarea::-webkit-scrollbar-track {
@@ -357,113 +438,171 @@ const getEditorHTML = (uuid, content, currentTTL) => {
         
         .editor-textarea::-webkit-scrollbar-thumb {
             background: var(--border);
-            border-radius: 4px;
+            border-radius: 3px;
         }
         
         .editor-textarea::-webkit-scrollbar-thumb:hover {
             background: var(--text-secondary);
         }
         
-        .status-bar {
-            background: var(--surface);
-            border-top: 1px solid var(--border);
-            padding: 0.75rem 1.5rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-size: 0.8rem;
+        /* Mobile Optimizations */
+        @media (max-width: 768px) {
+            .editor-header {
+                padding: 0.6rem 0.8rem;
+                gap: 0.6rem;
+            }
+            
+            .header-top {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.6rem;
+            }
+            
+            .header-right {
+                justify-content: space-between;
+                width: 100%;
+            }
+            
+            .info-bar {
+                gap: 0.5rem;
+                padding: 0.4rem 0;
+            }
+            
+            .info-left {
+                gap: 0.6rem;
+                justify-content: space-between;
+            }
+            
+            .info-item {
+                font-size: 0.7rem;
+            }
+            
+            .controls-bar {
+                gap: 0.5rem;
+            }
+            
+            .control-group {
+                flex: 2;
+                min-width: 150px;
+            }
+            
+            .btn-group {
+                flex: 1;
+                justify-content: flex-end;
+            }
+            
+            .btn {
+                padding: 0.35rem 0.6rem;
+                font-size: 0.7rem;
+            }
+            
+            .btn-text {
+                display: none;
+            }
+            
+            .line-numbers {
+                min-width: 40px;
+                padding: 1rem 0.3rem;
+                font-size: 0.75rem;
+            }
+            
+            .editor-textarea {
+                padding: 1rem 0.8rem;
+                font-size: 0.8rem;
+            }
         }
         
-        .status-left {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-        
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-secondary);
-        }
-        
-        .status-indicator {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: var(--accent);
-        }
-        
-        .status-indicator.saving {
-            background: var(--warning);
-            animation: pulse 1s infinite;
-        }
-        
-        .status-indicator.error {
-            background: var(--danger);
-        }
-        
-        .file-stats {
-            font-family: 'Fira Code', monospace;
-        }
-        
-        .expiry-info {
-            background: var(--surface-light);
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            border: 1px solid var(--border);
-        }
-        
-        .language-badge {
-            background: var(--primary);
-            color: white;
-            padding: 0.25rem 0.5rem;
-            border-radius: 4px;
-            font-size: 0.7rem;
-            font-weight: 500;
+        @media (max-width: 480px) {
+            .editor-info h1 {
+                font-size: 0.9rem;
+            }
+            
+            .note-id {
+                max-width: 80px;
+                font-size: 0.65rem;
+            }
+            
+            .info-left {
+                flex-wrap: wrap;
+                gap: 0.4rem;
+            }
+            
+            .control-group {
+                min-width: 120px;
+            }
+            
+            .btn {
+                padding: 0.3rem;
+            }
+            
+            .btn i {
+                margin: 0;
+            }
         }
         
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.5; }
         }
-        
-        @media (max-width: 768px) {
-            .editor-header {
-                padding: 0.75rem 1rem;
-            }
-            
-            .header-right {
-                order: -1;
-                width: 100%;
-                justify-content: space-between;
-            }
-            
-            .control-group {
-                flex: 1;
-            }
-            
-            .ttl-select {
-                flex: 1;
-            }
-        }
     </style>
 </head>
 <body>
     <div class="editor-header">
-        <div class="header-left">
-            <div class="logo">📝</div>
-            <div class="editor-info">
-                <h1>API GHICHU Editor</h1>
-                <div class="editor-subtitle">
-                    <span>Auto-save • </span>
-                    <span class="note-id">${uuid}</span>
-                    <span id="languageBadge" class="language-badge" style="display: none;">Text</span>
+        <!-- Top Bar: Logo, Title, and Action Buttons -->
+        <div class="header-top">
+            <div class="header-left">
+                <div class="logo">📝</div>
+                <div class="editor-info">
+                    <h1>API GHICHU Editor</h1>
+                    <div class="editor-subtitle">
+                        <span>Auto-save • </span>
+                        <span class="note-id">${uuid}</span>
+                        <span id="languageBadge" class="language-badge" style="display: none;">Text</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="header-right">
+                <button class="btn btn-secondary" id="themeToggle" title="Chuyển đổi giao diện">
+                    <i class="fas fa-palette"></i>
+                    <span class="btn-text">Giao diện</span>
+                </button>
+                
+                <a href="/raw/${uuid}" class="btn btn-secondary" target="_blank" title="Xem nội dung raw">
+                    <i class="fas fa-code"></i>
+                    <span class="btn-text">Raw</span>
+                </a>
+                
+                <button class="btn btn-danger" id="deleteBtn" title="Xóa ghi chú này">
+                    <i class="fas fa-trash"></i>
+                    <span class="btn-text">Xóa</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Info Bar: Status, Stats, Expiry -->
+        <div class="info-bar">
+            <div class="info-left">
+                <div class="info-item">
+                    <span id="statusIndicator" class="status-indicator"></span>
+                    <span id="statusText">Sẵn sàng</span>
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-clock"></i>
+                    <span id="expiryInfo">Hết hạn sau: 24 giờ</span>
+                </div>
+                <div class="info-item file-stats" id="fileStats">
+                    -
+                </div>
+                <div class="info-item">
+                    <i class="fas fa-arrows-alt-h"></i>
+                    <span id="cursorPosition">Dòng 1, Cột 1</span>
                 </div>
             </div>
         </div>
         
-        <div class="header-right">
+        <!-- Controls Bar: TTL and Save -->
+        <div class="controls-bar">
             <div class="control-group">
                 <span class="control-label">Hết hạn sau:</span>
                 <select class="ttl-select" id="ttlSelect">
@@ -478,28 +617,16 @@ const getEditorHTML = (uuid, content, currentTTL) => {
                 </select>
             </div>
             
-            <a href="/raw/${uuid}" class="btn btn-secondary" target="_blank" title="Xem nội dung raw">
-                <i class="fas fa-code"></i>
-                Raw
-            </a>
-            
-            <button class="btn btn-success" id="saveBtn" title="Lưu thủ công (Ctrl+S)">
-                <i class="fas fa-save"></i>
-                Lưu
-            </button>
-            
-            <button class="btn btn-danger" id="deleteBtn" title="Xóa ghi chú này">
-                <i class="fas fa-trash"></i>
-                Xóa
-            </button>
-            
-            <button class="btn btn-secondary" id="themeToggle" title="Chuyển đổi giao diện">
-                <i class="fas fa-palette"></i>
-                Giao diện
-            </button>
+            <div class="btn-group">
+                <button class="btn btn-success" id="saveBtn" title="Lưu thủ công (Ctrl+S)">
+                    <i class="fas fa-save"></i>
+                    <span class="btn-text">Lưu</span>
+                </button>
+            </div>
         </div>
     </div>
     
+    <!-- Editor Area -->
     <div class="editor-container">
         <div class="line-numbers" id="lineNumbers">
             <div class="line-number">1</div>
@@ -511,26 +638,6 @@ const getEditorHTML = (uuid, content, currentTTL) => {
                 placeholder="Bắt đầu nhập nội dung ghi chú của bạn..."
                 spellcheck="false"
             >${escapedContent}</textarea>
-        </div>
-    </div>
-    
-    <div class="status-bar">
-        <div class="status-left">
-            <div class="status-item">
-                <span id="statusIndicator" class="status-indicator"></span>
-                <span id="statusText">Sẵn sàng</span>
-            </div>
-            <div class="status-item">
-                <i class="fas fa-clock"></i>
-                <span id="expiryInfo">Hết hạn sau: 24 giờ</span>
-            </div>
-            <div class="status-item file-stats" id="fileStats">
-                -
-            </div>
-        </div>
-        <div class="status-item">
-            <i class="fas fa-arrows-alt-h"></i>
-            <span id="cursorPosition">Dòng 1, Cột 1</span>
         </div>
     </div>
 
