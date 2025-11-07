@@ -651,7 +651,7 @@ module.exports = {
             return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
         }
 
-        // Language detection
+        // Language detection - FIXED REGEX PATTERNS
         function detectLanguage(content) {
             if (!content || content.trim().length === 0) return 'text';
             
@@ -661,7 +661,7 @@ module.exports = {
                 html: [/<!doctype/i, /<html>/i, /<head>/i, /<body>/i],
                 css: [/\\w+\\s*\\{[^}]*\\}/m, /@media/i, /@import/i],
                 json: [/^\\s*\\{/, /^\\s*\\[/, /"[\\w-]+"\\s*:/],
-                markdown: [/^#+\\s/m, /\\*\\*.*\\*\\*/m, /```/m]
+                markdown: [/^#+\\s/m, /\\*\\*.*\\*\\*/m, /\\`\\`\\`/m] // FIXED: Properly escaped backticks
             };
 
             const firstLines = content.split('\\n').slice(0, 5).join(' ').toLowerCase();
