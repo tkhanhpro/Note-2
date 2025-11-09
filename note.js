@@ -1,11 +1,11 @@
 /**
- * API GHICHU Client Utilities v2.0
- * Enhanced client-side utilities for the modern note service
+ * API GHICHU Client Utilities
+ * Enhanced client-side utilities for interacting with the API GHICHU service
  */
 
 class APIGhichuClient {
     constructor(baseUrl = '') {
-        this.baseUrl = baseUrl.replace(/\/$/, '');
+        this.baseUrl = baseUrl;
         this.defaultHeaders = {
             'Content-Type': 'text/plain; charset=utf-8',
             'Cache-Control': 'no-cache'
@@ -31,7 +31,6 @@ class APIGhichuClient {
      */
     async createNote(content = '') {
         const uuid = this.generateUUID();
-        const url = `${this.baseUrl}/${uuid}`;
         
         if (content) {
             await this.saveNote(uuid, content);
@@ -39,9 +38,8 @@ class APIGhichuClient {
         
         return {
             uuid: uuid,
-            url: url,
-            rawUrl: `${url}?raw=true`,
-            editUrl: url
+            url: `${this.baseUrl}/edit/${uuid}`,
+            rawUrl: `${this.baseUrl}/raw/${uuid}`
         };
     }
 
@@ -52,7 +50,7 @@ class APIGhichuClient {
      */
     async getNote(uuid) {
         try {
-            const response = await fetch(`${this.baseUrl}/${uuid}?raw=true`, {
+            const response = await fetch(`${this.baseUrl}/raw/${uuid}`, {
                 method: 'GET',
                 headers: this.defaultHeaders
             });
@@ -74,25 +72,73 @@ class APIGhichuClient {
      * Save note content
      * @param {string} uuid - Note UUID
      * @param {string} content - Note content to save
-     * @returns {Promise<boolean>} Save success
+     * @returns {Promise<Object>} Save result
      */
     async saveNote(uuid, content) {
         try {
-            const response = await fetch(`${this.baseUrl}/${uuid}`, {
+            const response = await fetch(`${this.baseUrl}/edit/${uuid}`, {
                 method: 'PUT',
                 headers: this.defaultHeaders,
                 body: content
             });
 
             if (response.ok) {
-                console.log('✅ Note saved successfully');
-                return true;
+                const result = await response.json();
+                console.log('✅ Note saved successfully:', result);
+                return result;
             } else {
-                throw new Error(`Save failed: ${response.statusText}`);
+                const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(`Save failed: ${error.error || response.statusText}`);
             }
         } catch (error) {
             console.error('❌ Error saving note:', error);
             throw error;
+        }
+    }
+
+    /**
+     * Delete a note
+     * @param {string} uuid - Note UUID
+     * @returns {Promise<Object>} Delete result
+     */
+    async deleteNote(uuid) {
+        try {
+            const response = await fetch(`${this.baseUrl}/edit/${uuid}`, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Cache-Control': 'no-cache'
+                }
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log('🗑️ Note deleted successfully:', result);
+                return result;
+            } else {
+                const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+                throw new Error(`Delete failed: ${error.error || response.statusText}`);
+            }
+        } catch (error) {
+            console.error('❌ Error deleting note:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Check if a note exists
+     * @param {string} uuid - Note UUID
+     * @returns {Promise<boolean>} True if note exists
+     */
+    async noteExists(uuid) {
+        try {
+            const response = await fetch(`${this.baseUrl}/raw/${uuid}`, {
+                method: 'HEAD',
+                headers: this.defaultHeaders
+            });
+            return response.ok;
+        } catch (error) {
+            return false;
         }
     }
 
@@ -145,29 +191,28 @@ class APIGhichuClient {
         const lines = content.split('\n').slice(0, 10);
         const firstLines = lines.join(' ').toLowerCase();
         
-        // Enhanced language detection patterns
+        // Language detection patterns
         const patterns = {
-            'html': [/<!doctype/i, /<html/i, /<head/i, /<body/i, /<div/i, /<span/i],
-            'php': [/<?php/i, /\\$\\w+/, /echo\\s+/i, /function\\s+\\w+\\s*\\(/i],
-            'python': [/^def\\s+\\w+\\s*\\(/m, /^import\\s+\\w+/m, /^from\\s+\\w+\\s+import/m, /^class\\s+\\w+/m],
-            'javascript': [/function\\s+\\w+\\s*\\(/i, /const\\s+\\w+/i, /let\\s+\\w+/i, /var\\s+\\w+/i, /=>/],
-            'typescript': [/interface\\s+\\w+/i, /type\\s+\\w+/i, /enum\\s+\\w+/i, /:\\s*[^{]/],
-            'java': [/public\\s+class\\s+\\w+/i, /import\\s+java\\./i, /private\\s+\\w+\\s+\\w+/i],
-            'cpp': [/#include\\s*</i, /namespace\\s+std/i, /using\\s+namespace/i, /std::/],
-            'sql': [/select\\s+.*\\s+from/i, /insert\\s+into/i, /update\\s+.*\\s+set/i, /create\\s+table/i],
-            'json': [/^\\s*\\{/, /^\\s*\\[/, /"\\w+"\\s*:/],
-            'markdown': [/^#+\\s/m, /\\*\\*.*\\*\\*/m, /```/m, /^>-\\s/m],
-            'css': [/\\w+\\s*\\{[^}]*\\}/m, /@media/i, /@import/i, /:\\s*[^;]*;/],
-            'yaml': [/^\\s*\\w+:/m, /^-\\s/m, /^\\s*#/m]
+            html: [/<!doctype/i, /<html>/i, /<head>/i, /<body>/i],
+            php: [/<?php/i, /\$\w+/],
+            python: [/def\s+\w+\s*\(/i, /import\s+\w+/i, /from\s+\w+\s+import/i],
+            javascript: [/function\s+\w+\s*\(/i, /const\s+\w+/i, /let\s+\w+/i, /var\s+\w+/i],
+            typescript: [/interface\s+\w+/i, /type\s+\w+/i, /enum\s+\w+/i],
+            java: [/public\s+class\s+\w+/i, /import\s+java\./i, /public\s+static\s+void\s+main/i],
+            cpp: [/#include\s*</i, /namespace\s+std/i, /using\s+namespace/i],
+            sql: [/select\s+.*\s+from/i, /insert\s+into/i, /update\s+.*\s+set/i, /create\s+table/i],
+            json: [/^\s*\{/, /^\s*\[/, /"[\w-]+"\s*:/],
+            markdown: [/^#+\s/m, /\*\*.*\*\*/m, /```/m],
+            css: [/\w+\s*\{[^}]*\}/m, /@media/i, /@import/i]
         };
 
         for (const [lang, langPatterns] of Object.entries(patterns)) {
             if (langPatterns.some(pattern => pattern.test(firstLines))) {
-                return lang.toUpperCase();
+                return lang;
             }
         }
 
-        return 'TEXT';
+        return 'text';
     }
 
     /**
@@ -187,31 +232,28 @@ class APIGhichuClient {
 
         let saveTimeout;
         let lastSavedContent = textarea.value;
-        let isSaving = false;
+        let isContentChanged = false;
 
         const saveContent = async () => {
-            if (isSaving || textarea.value === lastSavedContent) return;
+            if (!isContentChanged) return;
 
-            isSaving = true;
-            
             try {
                 onSaving();
                 await this.saveNote(uuid, textarea.value);
                 lastSavedContent = textarea.value;
+                isContentChanged = false;
                 onSaved();
             } catch (error) {
                 onError(error);
-            } finally {
-                isSaving = false;
             }
         };
 
         const handleInput = () => {
             const stats = this.getContentStats(textarea.value);
-            const language = this.detectLanguage(textarea.value);
-            onStatsUpdate({ ...stats, language });
+            onStatsUpdate(stats);
 
-            if (textarea.value !== lastSavedContent && !isSaving) {
+            if (textarea.value !== lastSavedContent) {
+                isContentChanged = true;
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(saveContent, delay);
             }
@@ -231,8 +273,7 @@ class APIGhichuClient {
 
         // Initial stats
         const initialStats = this.getContentStats(textarea.value);
-        const initialLanguage = this.detectLanguage(textarea.value);
-        onStatsUpdate({ ...initialStats, language: initialLanguage });
+        onStatsUpdate(initialStats);
 
         return {
             save: saveContent,
@@ -245,19 +286,11 @@ class APIGhichuClient {
     }
 
     /**
-     * Setup enhanced editor with line numbers, syntax detection, etc.
+     * Setup line numbers for a textarea
      * @param {HTMLTextAreaElement} textarea - Textarea element
      * @param {HTMLElement} lineNumbersContainer - Line numbers container
-     * @param {Object} callbacks - Editor callbacks
      */
-    setupEnhancedEditor(textarea, lineNumbersContainer, callbacks = {}) {
-        const {
-            onCursorUpdate = () => {},
-            onLanguageChange = () => {},
-            onContentChange = () => {}
-        } = callbacks;
-
-        // Line numbers
+    setupLineNumbers(textarea, lineNumbersContainer) {
         const updateLineNumbers = () => {
             const lines = textarea.value.split('\n');
             const lineNumbersHTML = lines.map((_, index) => 
@@ -271,51 +304,18 @@ class APIGhichuClient {
             lineNumbersContainer.scrollTop = textarea.scrollTop;
         };
 
-        // Cursor position
-        const updateCursorPosition = () => {
-            const text = textarea.value;
-            const position = textarea.selectionStart;
-            
-            const lines = text.substr(0, position).split('\n');
-            const lineNumber = lines.length;
-            const columnNumber = lines[lines.length - 1].length + 1;
-            
-            onCursorUpdate({ line: lineNumber, column: columnNumber });
-        };
-
-        // Language detection
-        const updateLanguage = () => {
-            const language = this.detectLanguage(textarea.value);
-            onLanguageChange(language);
-        };
-
-        // Content change handler
-        const handleContentChange = () => {
-            updateLineNumbers();
-            updateCursorPosition();
-            updateLanguage();
-            onContentChange(textarea.value);
-        };
-
-        // Event listeners
-        textarea.addEventListener('input', handleContentChange);
+        textarea.addEventListener('input', updateLineNumbers);
         textarea.addEventListener('scroll', syncScroll);
-        textarea.addEventListener('click', updateCursorPosition);
-        textarea.addEventListener('keyup', updateCursorPosition);
+        textarea.addEventListener('paste', () => setTimeout(updateLineNumbers, 0));
 
-        // Tab support
-        this.setupTabSupport(textarea);
-
-        // Initial setup
-        handleContentChange();
+        // Initial update
+        updateLineNumbers();
 
         return {
-            update: handleContentChange,
+            update: updateLineNumbers,
             destroy: () => {
-                textarea.removeEventListener('input', handleContentChange);
+                textarea.removeEventListener('input', updateLineNumbers);
                 textarea.removeEventListener('scroll', syncScroll);
-                textarea.removeEventListener('click', updateCursorPosition);
-                textarea.removeEventListener('keyup', updateCursorPosition);
             }
         };
     }
@@ -370,52 +370,22 @@ class APIGhichuClient {
      */
     async healthCheck() {
         try {
-            const response = await fetch(`${this.baseUrl}/health`, {
+            const response = await fetch(`${this.baseUrl}/`, {
                 method: 'GET',
                 headers: { 'Cache-Control': 'no-cache' }
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                return {
-                    status: 'healthy',
-                    ...data
-                };
-            } else {
-                return {
-                    status: 'unhealthy',
-                    statusCode: response.status,
-                    timestamp: new Date().toISOString()
-                };
-            }
+            return {
+                status: response.ok ? 'healthy' : 'unhealthy',
+                statusCode: response.status,
+                timestamp: new Date().toISOString()
+            };
         } catch (error) {
             return {
                 status: 'error',
                 error: error.message,
                 timestamp: new Date().toISOString()
             };
-        }
-    }
-
-    /**
-     * Get API information and statistics
-     * @returns {Promise<Object>} API information
-     */
-    async getAPIInfo() {
-        try {
-            const response = await fetch(`${this.baseUrl}/api`, {
-                method: 'GET',
-                headers: { 'Cache-Control': 'no-cache' }
-            });
-
-            if (response.ok) {
-                return await response.json();
-            } else {
-                throw new Error(`API info request failed: ${response.status}`);
-            }
-        } catch (error) {
-            console.error('Error getting API info:', error);
-            throw error;
         }
     }
 }
@@ -429,6 +399,6 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Auto-initialize for browser
 if (typeof window !== 'undefined') {
-    window.apiGhichu = new APIGhichuClient(window.location.origin);
-    console.log('🚀 API GHICHU Client v2.0 initialized');
+    window.apiGhichu = new APIGhichuClient();
+    console.log('🚀 API GHICHU Client initialized');
 }
