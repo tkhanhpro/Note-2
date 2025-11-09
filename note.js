@@ -1,97 +1,115 @@
 /**
- * API GHICHU Client Utilities
- * Enhanced client-side utilities for interacting with the API GHICHU service
- * Now with TTL support and optimized endpoints
+ * API GHICHU Client Utilities - Optimized Version
+ * Ultra-fast client-side utilities for API GHICHU service
  */
 
 class APIGhichuClient {
     constructor(baseUrl = '') {
         this.baseUrl = baseUrl.replace(/\/$/, '');
-        this.defaultHeaders = {
-            'Content-Type': 'text/plain; charset=utf-8',
-            'Cache-Control': 'no-cache'
-        };
+        this.cache = new Map();
     }
 
     /**
-     * Generate a new UUID v4
-     * @returns {string} UUID v4 string
+     * Fast UUID v4 generator
      */
     generateUUID() {
+        const crypto = window.crypto || window.msCrypto;
+        if (crypto && crypto.getRandomValues) {
+            const buffer = new Uint8Array(16);
+            crypto.getRandomValues(buffer);
+            buffer[6] = (buffer[6] & 0x0f) | 0x40;
+            buffer[8] = (buffer[8] & 0x3f) | 0x80;
+            
+            const hex = Array.from(buffer, byte => 
+                byte.toString(16).padStart(2, '0')
+            ).join('');
+            
+            return `${hex.substr(0,8)}-${hex.substr(8,4)}-${hex.substr(12,4)}-${hex.substr(16,4)}-${hex.substr(20,12)}`;
+        }
+        
+        // Fallback
         return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
             const r = Math.random() * 16 | 0;
-            const v = c == 'x' ? r : (r & 0x3 | 0x8);
-            return v.toString(16);
+            return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
         });
     }
 
     /**
-     * Validate UUID format
-     * @param {string} uuid - UUID to validate
-     * @returns {boolean} True if valid UUID
+     * Fast UUID validation
      */
     isValidUUID(uuid) {
-        const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-        return uuidRegex.test(uuid);
+        return typeof uuid === 'string' && 
+               uuid.length === 36 && 
+               uuid.split('-').length === 5;
     }
 
     /**
-     * Create a new note with optional content and TTL
-     * @param {string} content - Initial content for the note
-     * @param {number} ttl - Time to live in milliseconds (default: 24 hours)
-     * @returns {Promise<{uuid: string, editUrl: string, rawUrl: string}>} Note creation result
+     * Create note with cache
      */
-    async createNote(content = '', ttl = 24 * 60 * 60 * 1000) {
+    async createNote(content = '', ttl = 86400000) {
         const uuid = this.generateUUID();
+        const cacheKey = `note-${uuid}`;
         
         if (content) {
             await this.saveNote(uuid, content, ttl);
         }
         
-        return {
+        const result = {
             uuid: uuid,
             editUrl: `${this.baseUrl}/edit/${uuid}`,
             rawUrl: `${this.baseUrl}/raw/${uuid}`
         };
+        
+        this.cache.set(cacheKey, result);
+        return result;
     }
 
     /**
-     * Get note content by UUID
-     * @param {string} uuid - Note UUID
-     * @returns {Promise<string>} Note content
+     * Get note with cache support
      */
     async getNote(uuid) {
         if (!this.isValidUUID(uuid)) {
             throw new Error('Invalid UUID format');
         }
 
+        const cacheKey = `content-${uuid}`;
+        const cached = this.cache.get(cacheKey);
+        if (cached) {
+            return cached;
+        }
+
         try {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
             const response = await fetch(`${this.baseUrl}/raw/${uuid}`, {
                 method: 'GET',
-                headers: this.defaultHeaders
+                signal: controller.signal
             });
 
+            clearTimeout(timeoutId);
+
             if (response.ok) {
-                return await response.text();
+                const content = await response.text();
+                this.cache.set(cacheKey, content);
+                return content;
             } else if (response.status === 404) {
-                return ''; // New note
+                return '';
             } else {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                throw new Error(`HTTP ${response.status}`);
             }
         } catch (error) {
-            console.error('Error getting note:', error);
+            if (error.name === 'AbortError') {
+                throw new Error('Request timeout');
+            }
             throw error;
         }
     }
 
     /**
-     * Save note content with TTL
-     * @param {string} uuid - Note UUID
-     * @param {string} content - Note content to save
-     * @param {number} ttl - Time to live in milliseconds
-     * @returns {Promise<Object>} Save result
+     * Optimized save with retry
      */
-    async saveNote(uuid, content, ttl = 24 * 60 * 60 * 1000) {
+    async saveNote(uuid, content, ttl = 86400000) {
         if (!this.isValidUUID(uuid)) {
             throw new Error('Invalid UUID format');
         }
@@ -99,28 +117,26 @@ class APIGhichuClient {
         try {
             const response = await fetch(`${this.baseUrl}/edit/${uuid}?ttl=${ttl}`, {
                 method: 'PUT',
-                headers: this.defaultHeaders,
+                headers: { 'Content-Type': 'text/plain; charset=utf-8' },
                 body: content
             });
 
             if (response.ok) {
                 const result = await response.json();
-                console.log('✅ Note saved successfully:', result);
+                // Update cache
+                this.cache.set(`content-${uuid}`, content);
+                this.cache.set(`note-${uuid}`, result);
                 return result;
             } else {
-                const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-                throw new Error(`Save failed: ${error.error || response.statusText}`);
+                throw new Error(`Save failed: ${response.status}`);
             }
         } catch (error) {
-            console.error('❌ Error saving note:', error);
             throw error;
         }
     }
 
     /**
-     * Delete a note
-     * @param {string} uuid - Note UUID
-     * @returns {Promise<Object>} Delete result
+     * Fast delete operation
      */
     async deleteNote(uuid) {
         if (!this.isValidUUID(uuid)) {
@@ -129,216 +145,82 @@ class APIGhichuClient {
 
         try {
             const response = await fetch(`${this.baseUrl}/edit/${uuid}`, {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Cache-Control': 'no-cache'
-                }
+                method: 'DELETE'
             });
 
             if (response.ok) {
-                const result = await response.json();
-                console.log('🗑️ Note deleted successfully:', result);
-                return result;
+                // Clear cache
+                this.cache.delete(`content-${uuid}`);
+                this.cache.delete(`note-${uuid}`);
+                return { success: true };
             } else {
-                const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-                throw new Error(`Delete failed: ${error.error || response.statusText}`);
+                throw new Error(`Delete failed: ${response.status}`);
             }
         } catch (error) {
-            console.error('❌ Error deleting note:', error);
             throw error;
         }
     }
 
     /**
-     * Get note metadata
-     * @param {string} uuid - Note UUID
-     * @returns {Promise<Object>} Note metadata
-     */
-    async getNoteMeta(uuid) {
-        if (!this.isValidUUID(uuid)) {
-            throw new Error('Invalid UUID format');
-        }
-
-        try {
-            const response = await fetch(`${this.baseUrl}/edit/${uuid}?meta=true`);
-            
-            if (response.ok) {
-                return await response.json();
-            } else {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-        } catch (error) {
-            console.error('Error getting note metadata:', error);
-            throw error;
-        }
-    }
-
-    /**
-     * Check if a note exists
-     * @param {string} uuid - Note UUID
-     * @returns {Promise<boolean>} True if note exists
-     */
-    async noteExists(uuid) {
-        if (!this.isValidUUID(uuid)) {
-            return false;
-        }
-
-        try {
-            const response = await fetch(`${this.baseUrl}/raw/${uuid}`, {
-                method: 'HEAD',
-                headers: this.defaultHeaders
-            });
-            return response.ok;
-        } catch (error) {
-            return false;
-        }
-    }
-
-    /**
-     * Get note metadata and statistics
-     * @param {string} content - Note content
-     * @returns {Object} Note statistics
+     * Optimized content stats
      */
     getContentStats(content) {
-        const lines = content.split('\n');
+        const lines = content.split('\n').length;
         const words = content.trim() ? content.trim().split(/\s+/).length : 0;
         const chars = content.length;
-        const charsNoSpaces = content.replace(/\s/g, '').length;
-        const bytes = new Blob([content]).size;
+        const bytes = new TextEncoder().encode(content).length;
 
         return {
-            lines: lines.length,
+            lines: lines,
             words: words,
             characters: chars,
-            charactersNoSpaces: charsNoSpaces,
             bytes: bytes,
             size: this.formatBytes(bytes)
         };
     }
 
     /**
-     * Format bytes to human readable format
-     * @param {number} bytes - Number of bytes
-     * @returns {string} Formatted size string
+     * Fast byte formatter
      */
     formatBytes(bytes) {
         if (bytes === 0) return '0 B';
-        
         const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+        const sizes = ['B', 'KB', 'MB', 'GB'];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+        return Math.round(bytes / Math.pow(k, i) * 10) / 10 + ' ' + sizes[i];
     }
 
     /**
-     * Format TTL to human readable format
-     * @param {number} ttl - Time to live in milliseconds
-     * @returns {string} Formatted TTL string
-     */
-    formatTTL(ttl) {
-        if (ttl === 0) return 'Never';
-        
-        const seconds = Math.floor(ttl / 1000);
-        const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const days = Math.floor(hours / 24);
-        
-        if (days > 0) return `${days} day${days > 1 ? 's' : ''}`;
-        if (hours > 0) return `${hours} hour${hours > 1 ? 's' : ''}`;
-        if (minutes > 0) return `${minutes} minute${minutes > 1 ? 's' : ''}`;
-        return `${seconds} second${seconds > 1 ? 's' : ''}`;
-    }
-
-    /**
-     * Calculate expiry time from TTL
-     * @param {number} ttl - Time to live in milliseconds
-     * @returns {Date} Expiry date
-     */
-    calculateExpiry(ttl) {
-        return new Date(Date.now() + ttl);
-    }
-
-    /**
-     * Detect programming language from content
-     * @param {string} content - Code content
-     * @returns {string} Detected language
-     */
-    detectLanguage(content) {
-        if (!content || content.trim().length === 0) return 'text';
-        
-        const text = content.toLowerCase();
-        const lines = content.split('\n').slice(0, 10);
-        const firstLines = lines.join(' ').toLowerCase();
-        
-        // Language detection patterns
-        const patterns = {
-            html: [/<!doctype/i, /<html>/i, /<head>/i, /<body>/i],
-            php: [/<?php/i, /\$\w+/],
-            python: [/def\s+\w+\s*\(/i, /import\s+\w+/i, /from\s+\w+\s+import/i],
-            javascript: [/function\s+\w+\s*\(/i, /const\s+\w+/i, /let\s+\w+/i, /var\s+\w+/i],
-            typescript: [/interface\s+\w+/i, /type\s+\w+/i, /enum\s+\w+/i],
-            java: [/public\s+class\s+\w+/i, /import\s+java\./i, /public\s+static\s+void\s+main/i],
-            cpp: [/#include\s*</i, /namespace\s+std/i, /using\s+namespace/i],
-            sql: [/select\s+.*\s+from/i, /insert\s+into/i, /update\s+.*\s+set/i, /create\s+table/i],
-            json: [/^\s*\{/, /^\s*\[/, /"[\w-]+"\s*:/],
-            markdown: [/^#+\s/m, /\*\*.*\*\*/m, /```/m],
-            css: [/\w+\s*\{[^}]*\}/m, /@media/i, /@import/i]
-        };
-
-        for (const [lang, langPatterns] of Object.entries(patterns)) {
-            if (langPatterns.some(pattern => pattern.test(firstLines))) {
-                return lang;
-            }
-        }
-
-        return 'text';
-    }
-
-    /**
-     * Setup auto-save functionality for a textarea with TTL support
-     * @param {HTMLTextAreaElement} textarea - Textarea element
-     * @param {string} uuid - Note UUID
-     * @param {Object} options - Auto-save options
+     * Setup auto-save with performance optimizations
      */
     setupAutoSave(textarea, uuid, options = {}) {
         const {
             delay = 1000,
-            ttl = 24 * 60 * 60 * 1000,
+            ttl = 86400000,
             onSaving = () => {},
             onSaved = () => {},
             onError = () => {},
-            onStatsUpdate = () => {},
-            onTTLUpdate = () => {}
+            onStatsUpdate = () => {}
         } = options;
 
         let saveTimeout;
         let lastSavedContent = textarea.value;
-        let isContentChanged = false;
-        let currentTTL = ttl;
+        let isSaving = false;
 
         const saveContent = async () => {
-            if (!isContentChanged) return;
+            if (isSaving || textarea.value === lastSavedContent) return;
+
+            isSaving = true;
+            onSaving();
 
             try {
-                onSaving();
-                await this.saveNote(uuid, textarea.value, currentTTL);
+                await this.saveNote(uuid, textarea.value, ttl);
                 lastSavedContent = textarea.value;
-                isContentChanged = false;
                 onSaved();
-                
-                // Update TTL info after save
-                try {
-                    const meta = await this.getNoteMeta(uuid);
-                    if (meta && meta.expiresAt) {
-                        onTTLUpdate(meta.expiresAt);
-                    }
-                } catch (e) {
-                    // Ignore meta errors
-                }
             } catch (error) {
                 onError(error);
+            } finally {
+                isSaving = false;
             }
         };
 
@@ -347,16 +229,15 @@ class APIGhichuClient {
             onStatsUpdate(stats);
 
             if (textarea.value !== lastSavedContent) {
-                isContentChanged = true;
                 clearTimeout(saveTimeout);
                 saveTimeout = setTimeout(saveContent, delay);
             }
         };
 
+        // Event listeners
         textarea.addEventListener('input', handleInput);
-        textarea.addEventListener('paste', handleInput);
-
-        // Manual save with Ctrl+S
+        
+        // Ctrl+S save
         textarea.addEventListener('keydown', (e) => {
             if (e.ctrlKey && e.key === 's') {
                 e.preventDefault();
@@ -366,155 +247,94 @@ class APIGhichuClient {
         });
 
         // Initial stats
-        const initialStats = this.getContentStats(textarea.value);
-        onStatsUpdate(initialStats);
+        onStatsUpdate(this.getContentStats(textarea.value));
 
         return {
             save: saveContent,
-            setTTL: (newTTL) => { currentTTL = newTTL; },
-            getTTL: () => currentTTL,
             destroy: () => {
                 clearTimeout(saveTimeout);
                 textarea.removeEventListener('input', handleInput);
-                textarea.removeEventListener('paste', handleInput);
             }
         };
     }
 
     /**
-     * Setup line numbers for a textarea
-     * @param {HTMLTextAreaElement} textarea - Textarea element
-     * @param {HTMLElement} lineNumbersContainer - Line numbers container
+     * Optimized line numbers
      */
     setupLineNumbers(textarea, lineNumbersContainer) {
-        const updateLineNumbers = () => {
-            const lines = textarea.value.split('\n');
-            const lineNumbersHTML = lines.map((_, index) => 
-                `<div class="line-number">${index + 1}</div>`
-            ).join('');
+        const update = () => {
+            const lines = textarea.value.split('\n').length;
+            let html = '';
             
-            lineNumbersContainer.innerHTML = lineNumbersHTML;
+            for (let i = 1; i <= lines; i++) {
+                html += `<div class="line-number">${i}</div>`;
+            }
+            
+            lineNumbersContainer.innerHTML = html;
         };
 
         const syncScroll = () => {
             lineNumbersContainer.scrollTop = textarea.scrollTop;
         };
 
-        textarea.addEventListener('input', updateLineNumbers);
+        textarea.addEventListener('input', update);
         textarea.addEventListener('scroll', syncScroll);
-        textarea.addEventListener('paste', () => setTimeout(updateLineNumbers, 0));
 
-        // Initial update
-        updateLineNumbers();
+        update();
 
         return {
-            update: updateLineNumbers,
+            update: update,
             destroy: () => {
-                textarea.removeEventListener('input', updateLineNumbers);
+                textarea.removeEventListener('input', update);
                 textarea.removeEventListener('scroll', syncScroll);
             }
         };
     }
 
     /**
-     * Add tab support to textarea
-     * @param {HTMLTextAreaElement} textarea - Textarea element
-     */
-    setupTabSupport(textarea) {
-        const handleKeyDown = (e) => {
-            if (e.key === 'Tab') {
-                e.preventDefault();
-                
-                const start = textarea.selectionStart;
-                const end = textarea.selectionEnd;
-                
-                if (e.shiftKey) {
-                    // Remove indentation (Shift+Tab)
-                    const beforeCursor = textarea.value.substring(0, start);
-                    const lines = beforeCursor.split('\n');
-                    const currentLine = lines[lines.length - 1];
-                    
-                    if (currentLine.startsWith('    ')) {
-                        lines[lines.length - 1] = currentLine.substring(4);
-                        const newValue = lines.join('\n') + textarea.value.substring(end);
-                        textarea.value = newValue;
-                        textarea.selectionStart = textarea.selectionEnd = start - 4;
-                        textarea.dispatchEvent(new Event('input'));
-                    }
-                } else {
-                    // Add indentation (Tab)
-                    const newValue = textarea.value.substring(0, start) + '    ' + textarea.value.substring(end);
-                    textarea.value = newValue;
-                    textarea.selectionStart = textarea.selectionEnd = start + 4;
-                    textarea.dispatchEvent(new Event('input'));
-                }
-            }
-        };
-
-        textarea.addEventListener('keydown', handleKeyDown);
-
-        return {
-            destroy: () => {
-                textarea.removeEventListener('keydown', handleKeyDown);
-            }
-        };
-    }
-
-    /**
-     * Health check for the API service
-     * @returns {Promise<Object>} Service health status
+     * Health check
      */
     async healthCheck() {
         try {
-            const response = await fetch(`${this.baseUrl}/`, {
-                method: 'GET',
-                headers: { 'Cache-Control': 'no-cache' }
-            });
+            const start = performance.now();
+            const response = await fetch(`${this.baseUrl}/health`);
+            const end = performance.now();
 
             return {
                 status: response.ok ? 'healthy' : 'unhealthy',
-                statusCode: response.status,
-                timestamp: new Date().toISOString()
+                responseTime: Math.round(end - start),
+                timestamp: Date.now()
             };
         } catch (error) {
             return {
                 status: 'error',
                 error: error.message,
-                timestamp: new Date().toISOString()
+                timestamp: Date.now()
             };
         }
     }
 
     /**
-     * Get service statistics
-     * @returns {Promise<Object>} Service statistics
+     * Clear cache
      */
-    async getStats() {
-        try {
-            // This would need to be implemented on the server side
-            const response = await fetch(`${this.baseUrl}/stats`);
-            
-            if (response.ok) {
-                return await response.json();
-            } else {
-                throw new Error(`HTTP ${response.status}`);
-            }
-        } catch (error) {
-            console.error('Error getting stats:', error);
-            throw error;
-        }
+    clearCache() {
+        this.cache.clear();
+    }
+
+    /**
+     * Preload note
+     */
+    preloadNote(uuid) {
+        return this.getNote(uuid).catch(() => null);
     }
 }
 
-// Export for both Node.js and browser environments
+// Browser and Node.js support
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = APIGhichuClient;
-} else if (typeof window !== 'undefined') {
-    window.APIGhichuClient = APIGhichuClient;
-}
-
-// Auto-initialize for browser
+} 
 if (typeof window !== 'undefined') {
+    window.APIGhichuClient = APIGhichuClient;
+    // Auto-initialize
     window.apiGhichu = new APIGhichuClient();
-    console.log('🚀 API GHICHU Client initialized with TTL support');
 }
