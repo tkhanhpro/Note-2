@@ -4,466 +4,130 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>API GHICHU - Modern Note Service</title>
-  <link rel="icon" href="https://i.imgur.com/LgH7rtS.png" type="image/x-icon">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
   <style>
+    /* Critical CSS - Inlined for maximum performance */
     :root {
-      --primary: #6366f1;
-      --primary-dark: #4f46e5;
-      --primary-light: #8b5cf6;
-      --secondary: #f472b6;
-      --accent: #06d6a0;
-      --background: #0f172a;
-      --surface: #1e293b;
-      --surface-light: #334155;
-      --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8;
-      --text-muted: #64748b;
-      --border: #334155;
-      --shadow: rgba(0, 0, 0, 0.25);
-      --gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #f472b6);
+      --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #8b5cf6;
+      --secondary: #f472b6; --accent: #06d6a0; --background: #0f172a;
+      --surface: #1e293b; --surface-light: #334155; --text-primary: #f1f5f9;
+      --text-secondary: #94a3b8; --border: #334155; --gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #f472b6);
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      font-family: 'Inter', 'Segoe UI', system-ui, sans-serif;
-      background: var(--background);
-      color: var(--text-primary);
-      line-height: 1.6;
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
-
-    .background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: 
-        radial-gradient(circle at 20% 80%, rgba(99, 102, 241, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(139, 92, 246, 0.1) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(244, 114, 182, 0.05) 0%, transparent 50%);
-      z-index: -1;
-    }
-
-    .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem;
-    }
-
-    /* Header */
-    .header {
-      text-align: center;
-      margin-bottom: 4rem;
-    }
-
-    .logo {
-      width: 80px;
-      height: 80px;
-      margin: 0 auto 1.5rem;
-      background: var(--gradient);
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2rem;
-      box-shadow: 0 8px 32px rgba(99, 102, 241, 0.3);
-    }
-
-    .logo::before {
-      content: "📝";
-    }
-
-    .title {
-      font-size: 3.5rem;
-      font-weight: 800;
-      background: var(--gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      margin-bottom: 1rem;
-    }
-
-    .subtitle {
-      font-size: 1.25rem;
-      color: var(--text-secondary);
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    /* Hero Section */
-    .hero {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 4rem;
-      align-items: center;
-      margin-bottom: 4rem;
-    }
-
-    .hero-content h2 {
-      font-size: 2.5rem;
-      margin-bottom: 1.5rem;
-      line-height: 1.2;
-    }
-
-    .hero-content p {
-      font-size: 1.1rem;
-      color: var(--text-secondary);
-      margin-bottom: 2rem;
-    }
-
-    .hero-image {
-      position: relative;
-    }
-
-    .code-window {
-      background: var(--surface);
-      border-radius: 12px;
-      padding: 1.5rem;
-      border: 1px solid var(--border);
-      box-shadow: 0 20px 40px var(--shadow);
-    }
-
-    .window-header {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-
-    .window-dot {
-      width: 12px;
-      height: 12px;
-      border-radius: 50%;
-    }
-
-    .window-dot.red { background: #ef4444; }
-    .window-dot.yellow { background: #f59e0b; }
-    .window-dot.green { background: #10b981; }
-
-    .code-content {
-      font-family: 'Fira Code', monospace;
-      color: var(--text-secondary);
-      font-size: 0.9rem;
-    }
-
-    .code-line {
-      margin-bottom: 0.5rem;
-    }
-
-    .code-comment { color: #64748b; }
-    .code-function { color: #f472b6; }
-    .code-string { color: #06d6a0; }
-    .code-number { color: #f59e0b; }
-
-    /* Features Grid */
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 2rem;
-      margin-bottom: 4rem;
-    }
-
-    .feature-card {
-      background: var(--surface);
-      padding: 2rem;
-      border-radius: 16px;
-      border: 1px solid var(--border);
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .feature-card::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 3px;
-      background: var(--gradient);
-      transform: scaleX(0);
-      transition: transform 0.3s ease;
-    }
-
-    .feature-card:hover {
-      transform: translateY(-8px);
-      box-shadow: 0 20px 40px var(--shadow);
-    }
-
-    .feature-card:hover::before {
-      transform: scaleX(1);
-    }
-
-    .feature-icon {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-
-    .feature-card h3 {
-      font-size: 1.25rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .feature-card p {
-      color: var(--text-secondary);
-      font-size: 0.95rem;
-    }
-
-    /* CTA Section */
-    .cta-section {
-      text-align: center;
-      background: var(--surface);
-      padding: 3rem;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      margin-bottom: 4rem;
-    }
-
-    .cta-title {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-    }
-
-    .cta-buttons {
-      display: flex;
-      gap: 1rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-top: 2rem;
-    }
-
-    .btn {
-      padding: 1rem 2rem;
-      border: none;
-      border-radius: 12px;
-      font-size: 1rem;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      text-decoration: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-
-    .btn-primary {
-      background: var(--gradient);
-      color: white;
-      box-shadow: 0 8px 24px rgba(99, 102, 241, 0.3);
-    }
-
-    .btn-primary:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 12px 32px rgba(99, 102, 241, 0.4);
-    }
-
-    .btn-secondary {
-      background: var(--surface-light);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-    }
-
-    .btn-secondary:hover {
-      background: var(--surface);
-      transform: translateY(-2px);
-    }
-
-    /* API Reference */
-    .api-section {
-      margin-bottom: 4rem;
-    }
-
-    .section-title {
-      font-size: 2rem;
-      text-align: center;
-      margin-bottom: 3rem;
-      background: var(--gradient);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-
-    .api-grid {
-      display: grid;
-      gap: 1.5rem;
-    }
-
-    .api-endpoint {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      transition: all 0.3s ease;
-    }
-
-    .api-endpoint:hover {
-      border-color: var(--primary);
-      transform: translateX(8px);
-    }
-
-    .endpoint-header {
-      display: flex;
-      align-items: center;
-      gap: 1rem;
-      margin-bottom: 1rem;
-    }
-
-    .endpoint-method {
-      padding: 0.25rem 0.75rem;
-      border-radius: 6px;
-      font-size: 0.8rem;
-      font-weight: 700;
-      text-transform: uppercase;
-    }
-
-    .method-get { background: #10b981; color: white; }
-    .method-put { background: #f59e0b; color: white; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; background: var(--background); color: var(--text-primary); line-height: 1.6; }
+    
+    .container { max-width: 1200px; margin: 0 auto; padding: 1rem; }
+    .header { text-align: center; margin-bottom: 2rem; }
+    .logo { width: 60px; height: 60px; margin: 0 auto 1rem; background: var(--gradient); border-radius: 15px; 
+            display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .title { font-size: 2.5rem; font-weight: 800; background: var(--gradient); -webkit-background-clip: text; 
+             -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
+    .subtitle { font-size: 1.1rem; color: var(--text-secondary); max-width: 500px; margin: 0 auto; }
+    
+    .hero { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 3rem; text-align: center; }
+    .hero-content h2 { font-size: 2rem; margin-bottom: 1rem; }
+    .hero-content p { color: var(--text-secondary); margin-bottom: 1.5rem; }
+    
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 3rem; }
+    .feature-card { background: var(--surface); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); }
+    .feature-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    .feature-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+    .feature-card p { color: var(--text-secondary); font-size: 0.9rem; }
+    
+    .api-section { margin-bottom: 3rem; }
+    .section-title { font-size: 1.8rem; text-align: center; margin-bottom: 2rem; background: var(--gradient); 
+                     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .api-grid { display: grid; gap: 1rem; }
+    .api-endpoint { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
+    .endpoint-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+    .endpoint-method { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
+    .method-get { background: #10b981; color: white; } .method-put { background: #f59e0b; color: white; }
     .method-delete { background: #ef4444; color: white; }
-
-    .endpoint-path {
-      font-family: 'Fira Code', monospace;
-      color: var(--text-primary);
-      font-size: 1rem;
-    }
-
-    .endpoint-desc {
-      color: var(--text-secondary);
-      margin-bottom: 1rem;
-    }
-
-    .endpoint-params {
-      display: flex;
-      gap: 1rem;
-      flex-wrap: wrap;
-    }
-
-    .param {
-      background: var(--surface-light);
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-size: 0.85rem;
-      font-family: 'Fira Code', monospace;
-    }
-
-    /* Footer */
-    .footer {
-      text-align: center;
-      padding: 2rem 0;
-      color: var(--text-muted);
-      border-top: 1px solid var(--border);
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .hero {
-        grid-template-columns: 1fr;
-        text-align: center;
-      }
-      
-      .title {
-        font-size: 2.5rem;
-      }
-      
-      .cta-buttons {
-        flex-direction: column;
-        align-items: center;
-      }
-      
-      .btn {
-        width: 100%;
-        justify-content: center;
-      }
-    }
-
-    /* Animations */
-    @keyframes float {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-20px); }
-    }
-
-    .floating {
-      animation: float 6s ease-in-out infinite;
+    .endpoint-path { font-family: monospace; font-size: 0.9rem; }
+    .endpoint-desc { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem; }
+    
+    .cta-section { text-align: center; background: var(--surface); padding: 2rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; }
+    .cta-title { font-size: 1.5rem; margin-bottom: 0.5rem; }
+    
+    .btn { padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; 
+           transition: transform 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; margin: 0.25rem; }
+    .btn-primary { background: var(--gradient); color: white; }
+    .btn-secondary { background: var(--surface-light); color: var(--text-primary); border: 1px solid var(--border); }
+    .btn:hover { transform: translateY(-2px); }
+    
+    .footer { text-align: center; padding: 1rem 0; color: var(--text-secondary); border-top: 1px solid var(--border); }
+    
+    /* Desktop enhancements */
+    @media (min-width: 768px) {
+      .container { padding: 2rem; }
+      .hero { grid-template-columns: 1fr 1fr; text-align: left; align-items: center; }
+      .logo { width: 80px; height: 80px; font-size: 2rem; }
+      .title { font-size: 3.5rem; }
     }
   </style>
 </head>
 <body>
-  <div class="background"></div>
-  
   <div class="container">
-    <!-- Header -->
     <header class="header">
-      <div class="logo floating"></div>
+      <div class="logo">📝</div>
       <h1 class="title">API GHICHU</h1>
-      <p class="subtitle">Modern note-taking service với tính năng tự động hết hạn, tốc độ cao và giao diện tối ưu cho developer</p>
+      <p class="subtitle">Modern note-taking service với tốc độ siêu nhanh và giao diện tối ưu</p>
     </header>
 
-    <!-- Hero Section -->
     <section class="hero">
       <div class="hero-content">
         <h2>Ghi chú thông minh cho developer</h2>
-        <p>Tạo, chia sẻ và quản lý ghi chú code với tính năng tự động xóa sau thời gian chỉ định. Hoàn toàn miễn phí, không cần đăng ký.</p>
-        <div class="cta-buttons">
-          <button class="btn btn-primary" onclick="createNewNote()">
-            <span>🚀</span>
-            Tạo ghi chú mới
-          </button>
-          <button class="btn btn-secondary" onclick="openRandomNote()">
-            <span>🎲</span>
-            Thử nghiệm ngay
-          </button>
+        <p>Tạo, chia sẻ và quản lý ghi chú code với tốc độ tối đa. Tự động xóa, không cần đăng ký.</p>
+        <div>
+          <button class="btn btn-primary" onclick="createNewNote()">🚀 Tạo ghi chú mới</button>
+          <button class="btn btn-secondary" onclick="openRandomNote()">🎲 Thử nghiệm ngay</button>
         </div>
       </div>
-      <div class="hero-image">
-        <div class="code-window">
-          <div class="window-header">
-            <div class="window-dot red"></div>
-            <div class="window-dot yellow"></div>
-            <div class="window-dot green"></div>
+      <div>
+        <div style="background: var(--surface); border-radius: 8px; padding: 1rem; border: 1px solid var(--border);">
+          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></div>
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b;"></div>
+            <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></div>
           </div>
-          <div class="code-content">
-            <div class="code-line"><span class="code-comment">// Tạo ghi chú mới</span></div>
-            <div class="code-line"><span class="code-function">POST</span> /edit/{uuid}</div>
-            <div class="code-line"><span class="code-comment">// Lấy nội dung raw</span></div>
-            <div class="code-line"><span class="code-function">GET</span> /raw/{uuid}</div>
-            <div class="code-line"><span class="code-comment">// Tự động xóa sau</span></div>
-            <div class="code-line"><span class="code-function">TTL</span>: <span class="code-number">24h</span> → <span class="code-number">10 ngày</span></div>
+          <div style="font-family: monospace; color: var(--text-secondary); font-size: 0.9rem;">
+            <div>// Tạo ghi chú mới</div>
+            <div>POST /edit/{uuid}</div>
+            <div style="height: 0.5rem;"></div>
+            <div>// Lấy nội dung</div>
+            <div>GET /raw/{uuid}</div>
+            <div style="height: 0.5rem;"></div>
+            <div>// Tự động xóa sau</div>
+            <div>TTL: 1h → 10 ngày</div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- Features -->
     <section class="features">
       <div class="feature-card">
         <div class="feature-icon">⚡</div>
-        <h3>Tốc độ cao</h3>
-        <p>Endpoint được tối ưu hóa, phản hồi trong mili giây với công nghệ caching thông minh</p>
+        <h3>Tốc độ cực nhanh</h3>
+        <p>Endpoint tối ưu, cache thông minh, phản hồi trong mili giây</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🕒</div>
-        <h3>Tự động hết hạn</h3>
-        <p>Ghi chú tự động xóa sau 1-240 giờ (10 ngày) không có tương tác, bảo vệ quyền riêng tư</p>
+        <h3>Tự động xóa</h3>
+        <p>Ghi chú tự động xóa sau 1-240 giờ, bảo vệ quyền riêng tư</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🔒</div>
         <h3>Bảo mật UUID</h3>
-        <p>Mỗi ghi chú có ID duy nhất, không lưu trữ thông tin cá nhân, truy cập an toàn</p>
+        <p>ID duy nhất cho mỗi ghi chú, không lưu thông tin cá nhân</p>
       </div>
       <div class="feature-card">
         <div class="feature-icon">🎨</div>
         <h3>Editor mạnh mẽ</h3>
-        <p>Giao diện VS Code-like với syntax highlighting, line numbers và auto-save</p>
+        <p>Giao diện VS Code-like với syntax highlighting và auto-save</p>
       </div>
     </section>
 
-    <!-- API Reference -->
     <section class="api-section">
       <h2 class="section-title">API Reference</h2>
       <div class="api-grid">
@@ -472,11 +136,7 @@
             <span class="endpoint-method method-get">GET</span>
             <span class="endpoint-path">/edit/{uuid}</span>
           </div>
-          <p class="endpoint-desc">Mở giao diện editor trực quan để chỉnh sửa ghi chú</p>
-          <div class="endpoint-params">
-            <span class="param">uuid: string</span>
-            <span class="param">Định dạng UUID v4</span>
-          </div>
+          <p class="endpoint-desc">Mở editor trực quan để chỉnh sửa ghi chú</p>
         </div>
 
         <div class="api-endpoint">
@@ -484,11 +144,7 @@
             <span class="endpoint-method method-get">GET</span>
             <span class="endpoint-path">/raw/{uuid}</span>
           </div>
-          <p class="endpoint-desc">Lấy nội dung ghi chú dạng plain text (UTF-8)</p>
-          <div class="endpoint-params">
-            <span class="param">uuid: string</span>
-            <span class="param">Content-Type: text/plain</span>
-          </div>
+          <p class="endpoint-desc">Lấy nội dung ghi chú dạng plain text</p>
         </div>
 
         <div class="api-endpoint">
@@ -496,11 +152,7 @@
             <span class="endpoint-method method-put">PUT</span>
             <span class="endpoint-path">/edit/{uuid}?ttl=hours</span>
           </div>
-          <p class="endpoint-desc">Tạo/cập nhật ghi chú với thời gian sống tuỳ chỉnh</p>
-          <div class="endpoint-params">
-            <span class="param">ttl: number</span>
-            <span class="param">1-240 giờ (10 ngày)</span>
-          </div>
+          <p class="endpoint-desc">Tạo/cập nhật ghi chú với TTL tuỳ chỉnh</p>
         </div>
 
         <div class="api-endpoint">
@@ -509,70 +161,49 @@
             <span class="endpoint-path">/edit/{uuid}</span>
           </div>
           <p class="endpoint-desc">Xóa ghi chú vĩnh viễn ngay lập tức</p>
-          <div class="endpoint-params">
-            <span class="param">uuid: string</span>
-            <span class="param">Xác nhận UUID cần xóa</span>
-          </div>
         </div>
       </div>
     </section>
 
-    <!-- CTA Section -->
     <section class="cta-section">
       <h2 class="cta-title">Sẵn sàng bắt đầu?</h2>
-      <p>Tạo ghi chú đầu tiên của bạn ngay bây giờ - không cần cài đặt, không cần đăng ký!</p>
-      <div class="cta-buttons">
-        <button class="btn btn-primary" onclick="createNewNote()">
-          <span>✨</span>
-          Tạo ghi chú mới
-        </button>
-        <button class="btn btn-secondary" onclick="scrollToAPI()">
-          <span>📚</span>
-          Xem tài liệu
-        </button>
+      <p>Tạo ghi chú đầu tiên của bạn ngay bây giờ - tốc độ siêu nhanh!</p>
+      <div style="margin-top: 1.5rem;">
+        <button class="btn btn-primary" onclick="createNewNote()">✨ Tạo ghi chú mới</button>
+        <button class="btn btn-secondary" onclick="scrollToAPI()">📚 Xem API</button>
       </div>
     </section>
 
-    <!-- Footer -->
     <footer class="footer">
-      <p>© 2024 API GHICHU - Modern Note Service | Built for Developers</p>
+      <p>© 2024 API GHICHU - Optimized Note Service | Built for Performance</p>
     </footer>
   </div>
 
   <script>
+    // Optimized JavaScript - Minimal and fast
     function generateUUID() {
       return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0;
-        const v = c == 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
+        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
       });
     }
 
     function createNewNote() {
-      const uuid = generateUUID();
-      window.location.href = `/edit/${uuid}`;
+      window.location.href = '/edit/' + generateUUID();
     }
 
     function openRandomNote() {
-      const uuid = generateUUID();
-      window.location.href = `/edit/${uuid}`;
+      window.location.href = '/edit/' + generateUUID();
     }
 
     function scrollToAPI() {
-      document.querySelector('.api-section').scrollIntoView({ 
-        behavior: 'smooth' 
-      });
+      document.querySelector('.api-section').scrollIntoView({ behavior: 'smooth' });
     }
 
-    // Add some interactive effects
-    document.addEventListener('DOMContentLoaded', function() {
-      const features = document.querySelectorAll('.feature-card');
-      features.forEach((feature, index) => {
-        feature.style.animationDelay = `${index * 0.1}s`;
-      });
+    // Performance monitoring
+    window.addEventListener('load', function() {
+      console.log('🚀 API GHICHU - Optimized Interface Loaded');
     });
-
-    console.log('🚀 API GHICHU Modern Interface Loaded');
   </script>
 </body>
 </html>
