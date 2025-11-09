@@ -1,208 +1,441 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html lang="en" data-theme="dark">
 <head>
   <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta property="og:title" content="API GHICHU - Modern Note Service" />
+  <meta property="og:description" content="A beautiful, modern note-taking service with real-time editing and auto-save" />
+  <meta property="og:image" content="https://i.imgur.com/LgH7rtS.png" />
+  <meta property="og:url" content="https://ghichu.phungtuanhai.site" />
+  <meta property="og:site_name" content="API GHICHU" />
+  <meta property="og:type" content="website" />
+  <link href="https://i.imgur.com/LgH7rtS.png" rel="icon" type="image/x-icon" />
   <title>API GHICHU - Modern Note Service</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📝</text></svg>">
   <style>
-    /* Critical CSS - Inlined for maximum performance */
     :root {
-      --primary: #6366f1; --primary-dark: #4f46e5; --primary-light: #8b5cf6;
-      --secondary: #f472b6; --accent: #06d6a0; --background: #0f172a;
-      --surface: #1e293b; --surface-light: #334155; --text-primary: #f1f5f9;
-      --text-secondary: #94a3b8; --border: #334155; --gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #f472b6);
+      --bg-dark: #1a1a1a;
+      --bg-light: #ffffff;
+      --text-dark: #e9ecef;
+      --text-light: #2c3e50;
+      --accent-dark: #0d6efd;
+      --accent-light: #007bff;
+      --card-bg-dark: #2d2d30;
+      --card-bg-light: #f8f9fa;
+      --border-dark: #404040;
+      --border-light: #dee2e6;
     }
 
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, sans-serif; background: var(--background); color: var(--text-primary); line-height: 1.6; }
-    
-    .container { max-width: 1200px; margin: 0 auto; padding: 1rem; }
-    .header { text-align: center; margin-bottom: 2rem; }
-    .logo { width: 60px; height: 60px; margin: 0 auto 1rem; background: var(--gradient); border-radius: 15px; 
-            display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-    .title { font-size: 2.5rem; font-weight: 800; background: var(--gradient); -webkit-background-clip: text; 
-             -webkit-text-fill-color: transparent; background-clip: text; margin-bottom: 0.5rem; }
-    .subtitle { font-size: 1.1rem; color: var(--text-secondary); max-width: 500px; margin: 0 auto; }
-    
-    .hero { display: grid; grid-template-columns: 1fr; gap: 2rem; margin-bottom: 3rem; text-align: center; }
-    .hero-content h2 { font-size: 2rem; margin-bottom: 1rem; }
-    .hero-content p { color: var(--text-secondary); margin-bottom: 1.5rem; }
-    
-    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin-bottom: 3rem; }
-    .feature-card { background: var(--surface); padding: 1.5rem; border-radius: 12px; border: 1px solid var(--border); }
-    .feature-icon { font-size: 1.5rem; margin-bottom: 0.5rem; }
-    .feature-card h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
-    .feature-card p { color: var(--text-secondary); font-size: 0.9rem; }
-    
-    .api-section { margin-bottom: 3rem; }
-    .section-title { font-size: 1.8rem; text-align: center; margin-bottom: 2rem; background: var(--gradient); 
-                     -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-    .api-grid { display: grid; gap: 1rem; }
-    .api-endpoint { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; }
-    .endpoint-header { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
-    .endpoint-method { padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-    .method-get { background: #10b981; color: white; } .method-put { background: #f59e0b; color: white; }
-    .method-delete { background: #ef4444; color: white; }
-    .endpoint-path { font-family: monospace; font-size: 0.9rem; }
-    .endpoint-desc { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 0.5rem; }
-    
-    .cta-section { text-align: center; background: var(--surface); padding: 2rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 2rem; }
-    .cta-title { font-size: 1.5rem; margin-bottom: 0.5rem; }
-    
-    .btn { padding: 0.8rem 1.5rem; border: none; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; 
-           transition: transform 0.2s; text-decoration: none; display: inline-flex; align-items: center; gap: 0.5rem; margin: 0.25rem; }
-    .btn-primary { background: var(--gradient); color: white; }
-    .btn-secondary { background: var(--surface-light); color: var(--text-primary); border: 1px solid var(--border); }
-    .btn:hover { transform: translateY(-2px); }
-    
-    .footer { text-align: center; padding: 1rem 0; color: var(--text-secondary); border-top: 1px solid var(--border); }
-    
-    /* Desktop enhancements */
-    @media (min-width: 768px) {
-      .container { padding: 2rem; }
-      .hero { grid-template-columns: 1fr 1fr; text-align: left; align-items: center; }
-      .logo { width: 80px; height: 80px; font-size: 2rem; }
-      .title { font-size: 3.5rem; }
+    [data-theme="dark"] {
+      --bg: var(--bg-dark);
+      --text: var(--text-dark);
+      --accent: var(--accent-dark);
+      --card-bg: var(--card-bg-dark);
+      --border: var(--border-dark);
+    }
+
+    [data-theme="light"] {
+      --bg: var(--bg-light);
+      --text: var(--text-light);
+      --accent: var(--accent-light);
+      --card-bg: var(--card-bg-light);
+      --border: var(--border-light);
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      transition: all 0.3s ease;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+      flex: 1;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .logo {
+      width: 120px;
+      height: 120px;
+      margin-bottom: 24px;
+      border-radius: 24px;
+      box-shadow: 0 8px 32px rgba(0, 123, 255, 0.15);
+    }
+
+    .title {
+      font-size: 3.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), #6f42c1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    .subtitle {
+      font-size: 1.25rem;
+      opacity: 0.8;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      margin-bottom: 60px;
+    }
+
+    .feature-card {
+      background: var(--card-bg);
+      padding: 32px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+      text-align: center;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 16px 48px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-icon {
+      font-size: 3rem;
+      margin-bottom: 16px;
+    }
+
+    .feature-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .feature-desc {
+      opacity: 0.8;
+      line-height: 1.6;
+    }
+
+    .api-section {
+      background: var(--card-bg);
+      padding: 40px;
+      border-radius: 16px;
+      border: 1px solid var(--border);
+    }
+
+    .section-title {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .endpoint-list {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .endpoint-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px;
+      background: var(--bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      transition: all 0.3s ease;
+    }
+
+    .endpoint-item:hover {
+      border-color: var(--accent);
+      transform: translateX(8px);
+    }
+
+    .endpoint-info {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .endpoint-method {
+      background: var(--accent);
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.875rem;
+      font-weight: 600;
+      min-width: 80px;
+      text-align: center;
+    }
+
+    .endpoint-path {
+      font-family: 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
+      font-size: 1rem;
+    }
+
+    .endpoint-desc {
+      opacity: 0.8;
+      font-size: 0.9rem;
+    }
+
+    .btn {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 123, 255, 0.3);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 2px solid var(--accent);
+      color: var(--accent);
+    }
+
+    .btn-outline:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      padding: 12px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      z-index: 1000;
+    }
+
+    .theme-toggle:hover {
+      transform: rotate(180deg);
+    }
+
+    .footer {
+      text-align: center;
+      padding: 40px 20px;
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+    }
+
+    .footer-text {
+      opacity: 0.7;
+    }
+
+    .quick-actions {
+      display: flex;
+      gap: 16px;
+      justify-content: center;
+      margin-top: 32px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 768px) {
+      .title {
+        font-size: 2.5rem;
+      }
+      
+      .endpoint-item {
+        flex-direction: column;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      
+      .quick-actions {
+        flex-direction: column;
+        align-items: center;
+      }
+      
+      .btn {
+        width: 100%;
+        justify-content: center;
+      }
     }
   </style>
 </head>
 <body>
+  <button class="theme-toggle" id="themeToggle">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+    </svg>
+  </button>
+
   <div class="container">
-    <header class="header">
-      <div class="logo">📝</div>
+    <div class="header">
+      <img src="https://i.imgur.com/LgH7rtS.png" alt="API GHICHU Logo" class="logo">
       <h1 class="title">API GHICHU</h1>
-      <p class="subtitle">Modern note-taking service với tốc độ siêu nhanh và giao diện tối ưu</p>
-    </header>
-
-    <section class="hero">
-      <div class="hero-content">
-        <h2>Ghi chú thông minh cho developer</h2>
-        <p>Tạo, chia sẻ và quản lý ghi chú code với tốc độ tối đa. Tự động xóa, không cần đăng ký.</p>
-        <div>
-          <button class="btn btn-primary" onclick="createNewNote()">🚀 Tạo ghi chú mới</button>
-          <button class="btn btn-secondary" onclick="openRandomNote()">🎲 Thử nghiệm ngay</button>
-        </div>
+      <p class="subtitle">A beautiful, modern note-taking service with real-time editing, auto-save, and instant sharing</p>
+      
+      <div class="quick-actions">
+        <a href="#" class="btn" id="createNoteBtn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 5v14M5 12h14"></path>
+          </svg>
+          Create New Note
+        </a>
+        <a href="https://github.com/your-repo" class="btn btn-outline" target="_blank">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+          </svg>
+          GitHub
+        </a>
       </div>
-      <div>
-        <div style="background: var(--surface); border-radius: 8px; padding: 1rem; border: 1px solid var(--border);">
-          <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
-            <div style="width: 12px; height: 12px; border-radius: 50%; background: #ef4444;"></div>
-            <div style="width: 12px; height: 12px; border-radius: 50%; background: #f59e0b;"></div>
-            <div style="width: 12px; height: 12px; border-radius: 50%; background: #10b981;"></div>
-          </div>
-          <div style="font-family: monospace; color: var(--text-secondary); font-size: 0.9rem;">
-            <div>// Tạo ghi chú mới</div>
-            <div>POST /edit/{uuid}</div>
-            <div style="height: 0.5rem;"></div>
-            <div>// Lấy nội dung</div>
-            <div>GET /raw/{uuid}</div>
-            <div style="height: 0.5rem;"></div>
-            <div>// Tự động xóa sau</div>
-            <div>TTL: 1h → 10 ngày</div>
-          </div>
-        </div>
-      </div>
-    </section>
+    </div>
 
-    <section class="features">
+    <div class="features">
       <div class="feature-card">
         <div class="feature-icon">⚡</div>
-        <h3>Tốc độ cực nhanh</h3>
-        <p>Endpoint tối ưu, cache thông minh, phản hồi trong mili giây</p>
+        <h3 class="feature-title">Real-time Editing</h3>
+        <p class="feature-desc">Edit your notes with a beautiful VS Code-like interface with syntax highlighting and line numbers</p>
       </div>
+      
       <div class="feature-card">
-        <div class="feature-icon">🕒</div>
-        <h3>Tự động xóa</h3>
-        <p>Ghi chú tự động xóa sau 1-240 giờ, bảo vệ quyền riêng tư</p>
+        <div class="feature-icon">💾</div>
+        <h3 class="feature-title">Auto Save</h3>
+        <p class="feature-desc">Changes are automatically saved after 1 second. No more lost work!</p>
       </div>
+      
       <div class="feature-card">
-        <div class="feature-icon">🔒</div>
-        <h3>Bảo mật UUID</h3>
-        <p>ID duy nhất cho mỗi ghi chú, không lưu thông tin cá nhân</p>
+        <div class="feature-icon">🔗</div>
+        <h3 class="feature-title">Instant Sharing</h3>
+        <p class="feature-desc">Share notes instantly with unique URLs. No registration required</p>
       </div>
+      
       <div class="feature-card">
         <div class="feature-icon">🎨</div>
-        <h3>Editor mạnh mẽ</h3>
-        <p>Giao diện VS Code-like với syntax highlighting và auto-save</p>
+        <h3 class="feature-title">Dark/Light Mode</h3>
+        <p class="feature-desc">Beautiful themes that adapt to your preference with persistent settings</p>
       </div>
-    </section>
+      
+      <div class="feature-card">
+        <div class="feature-icon">📱</div>
+        <h3 class="feature-title">Responsive Design</h3>
+        <p class="feature-desc">Works perfectly on desktop, tablet, and mobile devices</p>
+      </div>
+      
+      <div class="feature-card">
+        <div class="feature-icon">🛡️</div>
+        <h3 class="feature-title">Auto Cleanup</h3>
+        <p class="feature-desc">Old notes are automatically cleaned up after 7 days to save space</p>
+      </div>
+    </div>
 
-    <section class="api-section">
-      <h2 class="section-title">API Reference</h2>
-      <div class="api-grid">
-        <div class="api-endpoint">
-          <div class="endpoint-header">
-            <span class="endpoint-method method-get">GET</span>
-            <span class="endpoint-path">/edit/{uuid}</span>
+    <div class="api-section">
+      <h2 class="section-title">API Endpoints</h2>
+      <div class="endpoint-list">
+        <div class="endpoint-item">
+          <div class="endpoint-info">
+            <span class="endpoint-method" style="background:#28a745;">GET</span>
+            <div>
+              <div class="endpoint-path">/{uuid}</div>
+              <div class="endpoint-desc">Access note editor or raw content</div>
+            </div>
           </div>
-          <p class="endpoint-desc">Mở editor trực quan để chỉnh sửa ghi chú</p>
+          <a href="/" class="btn btn-outline">Try It</a>
         </div>
-
-        <div class="api-endpoint">
-          <div class="endpoint-header">
-            <span class="endpoint-method method-get">GET</span>
-            <span class="endpoint-path">/raw/{uuid}</span>
+        
+        <div class="endpoint-item">
+          <div class="endpoint-info">
+            <span class="endpoint-method" style="background:#fd7e14;">PUT</span>
+            <div>
+              <div class="endpoint-path">/{uuid}</div>
+              <div class="endpoint-desc">Create or update a note</div>
+            </div>
           </div>
-          <p class="endpoint-desc">Lấy nội dung ghi chú dạng plain text</p>
+          <a href="/" class="btn btn-outline">Try It</a>
         </div>
-
-        <div class="api-endpoint">
-          <div class="endpoint-header">
-            <span class="endpoint-method method-put">PUT</span>
-            <span class="endpoint-path">/edit/{uuid}?ttl=hours</span>
+        
+        <div class="endpoint-item">
+          <div class="endpoint-info">
+            <span class="endpoint-method" style="background:#6f42c1;">GET</span>
+            <div>
+              <div class="endpoint-path">/{uuid}?raw=true</div>
+              <div class="endpoint-desc">Get raw note content</div>
+            </div>
           </div>
-          <p class="endpoint-desc">Tạo/cập nhật ghi chú với TTL tuỳ chỉnh</p>
-        </div>
-
-        <div class="api-endpoint">
-          <div class="endpoint-header">
-            <span class="endpoint-method method-delete">DELETE</span>
-            <span class="endpoint-path">/edit/{uuid}</span>
-          </div>
-          <p class="endpoint-desc">Xóa ghi chú vĩnh viễn ngay lập tức</p>
+          <a href="/" class="btn btn-outline">Try It</a>
         </div>
       </div>
-    </section>
+    </div>
+  </div>
 
-    <section class="cta-section">
-      <h2 class="cta-title">Sẵn sàng bắt đầu?</h2>
-      <p>Tạo ghi chú đầu tiên của bạn ngay bây giờ - tốc độ siêu nhanh!</p>
-      <div style="margin-top: 1.5rem;">
-        <button class="btn btn-primary" onclick="createNewNote()">✨ Tạo ghi chú mới</button>
-        <button class="btn btn-secondary" onclick="scrollToAPI()">📚 Xem API</button>
-      </div>
-    </section>
-
-    <footer class="footer">
-      <p>© 2024 API GHICHU - Optimized Note Service | Built for Performance</p>
-    </footer>
+  <div class="footer">
+    <p class="footer-text">Built with ❤️ using Node.js & Express</p>
+    <p class="footer-text">Auto cleanup: 7 days • Real-time updates • Open source</p>
   </div>
 
   <script>
-    // Optimized JavaScript - Minimal and fast
-    function generateUUID() {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    // Theme management
+    const themeToggle = document.getElementById('themeToggle');
+    const html = document.documentElement;
+    
+    const initTheme = () => {
+      const savedTheme = localStorage.getItem('theme') || 'dark';
+      html.setAttribute('data-theme', savedTheme);
+    };
+    
+    themeToggle.addEventListener('click', () => {
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+    });
+    
+    // Create new note
+    document.getElementById('createNoteBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      const { v4: uuidv4 } = require('uuid');
+      const uuid = uuidv4();
+      window.location.href = `/${uuid}`;
+    });
+    
+    // Initialize
+    initTheme();
+    
+    // Fallback for create note if UUID is not available
+    document.getElementById('createNoteBtn').addEventListener('click', (e) => {
+      e.preventDefault();
+      // Generate simple UUID-like string
+      const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
         const r = Math.random() * 16 | 0;
-        return (c == 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+        const v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
       });
-    }
-
-    function createNewNote() {
-      window.location.href = '/edit/' + generateUUID();
-    }
-
-    function openRandomNote() {
-      window.location.href = '/edit/' + generateUUID();
-    }
-
-    function scrollToAPI() {
-      document.querySelector('.api-section').scrollIntoView({ behavior: 'smooth' });
-    }
-
-    // Performance monitoring
-    window.addEventListener('load', function() {
-      console.log('🚀 API GHICHU - Optimized Interface Loaded');
+      window.location.href = `/${uuid}`;
     });
   </script>
 </body>
