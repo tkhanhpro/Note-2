@@ -3,169 +3,89 @@ const ews = require('express-ws');
 const cors = require('cors');
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 
 const app = express();
 const count_req_path = `${__dirname}/count_req.json`;
-const notesDir = path.join(__dirname, 'note');
 let count_req_data = {};
 
-// Ensure directories exist
-[notesDir, path.dirname(count_req_path)].forEach(dir => {
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
-});
+const count_req_save = () => fs.writeFileSync(count_req_path, JSON.stringify(count_req_data), 'utf8');
+const api = [];
 
-// Optimized file operations
-const count_req_save = () => {
-  try {
-    fs.writeFileSync(count_req_path, JSON.stringify(count_req_data));
-  } catch (e) {
-    // Silent fail for performance
-  }
-};
-
-// Fast cleanup with bulk operations
-const cleanupExpiredNotes = () => {
-  try {
-    const now = Date.now();
-    const files = fs.readdirSync(notesDir, { withFileTypes: true });
-    const toDelete = [];
-
-    // First pass: identify files to delete
-    for (const file of files) {
-      if (file.isFile() && file.name.endsWith('.json')) {
-        try {
-          const filePath = path.join(notesDir, file.name);
-          const data = fs.readFileSync(filePath, 'utf8');
-          const meta = JSON.parse(data);
-          
-          if (meta.expiresAt && now > meta.expiresAt) {
-            const uuid = file.name.replace('.json', '');
-            toDelete.push({
-              meta: filePath,
-              content: path.join(notesDir, `${uuid}.txt`)
-            });
-          }
-        } catch (e) {
-          // Skip invalid files
-          continue;
-        }
-      }
-    }
-
-    // Second pass: bulk delete
-    for (const file of toDelete) {
-      try {
-        if (fs.existsSync(file.content)) fs.unlinkSync(file.content);
-        if (fs.existsSync(file.meta)) fs.unlinkSync(file.meta);
-      } catch (e) {
-        // Continue with other files
-      }
-    }
-
-    if (toDelete.length > 0) {
-      console.log(`🗑️ Cleaned up ${toDelete.length} expired notes`);
-    }
-  } catch (error) {
-    console.log('Cleanup error:', error.message);
-  }
-};
-
-// Run cleanup every hour
-setInterval(cleanupExpiredNotes, 60 * 60 * 1000);
-// Initial cleanup after startup
-setTimeout(cleanupExpiredNotes, 5000);
-
-// Load request count data
-try {
-  if (fs.existsSync(count_req_path)) {
-    count_req_data = JSON.parse(fs.readFileSync(count_req_path, 'utf8'));
-  }
-} catch (e) {
-  count_req_data = {};
-}
+if (!fs.existsSync(count_req_path)) count_req_save();
+else count_req_data = require(count_req_path);
 
 ews(app);
-app.set('json spaces', 2); // Reduced for performance
+app.set('json spaces', 4);
 app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-app.use(express.text({ type: 'text/plain', limit: '10mb' }));
+app.use(express.json());
 
-// Serve static files with cache headers
-app.use(express.static(__dirname, {
-  maxAge: '1h',
-  etag: false // Disable etag for better performance
-}));
+// Serve static files
+app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
-// Pre-load API endpoints for faster startup
-const api = [];
-const apiFiles = fs.readdirSync('./api').filter(file => file.endsWith('.js'));
-
-apiFiles.forEach(file => {
+// Load API routes
+fs.readdirSync('./api').forEach(file => {
   try {
-    const file_import = require(`./api/${file}`);
-    
-    if (!count_req_data[file_import.info.path]) {
-      count_req_data[file_import.info.path] = 0;
-    }
-    
-    if (file_import.info.path !== '/') {
-      api.push(file_import.info);
-    }
+    let file_import = require(`./api/${file}`);
+    if (!count_req_data[file_import.info.path]) count_req_data[file_import.info.path] = 0;
+    if (!/^\/$/.test(file_import.info.path)) api.push(file_import.info);
 
-    // Register routes with optimized handler
     Object.keys(file_import.methods).forEach(method => {
       app[method](file_import.info.path, (req, res, next) => {
-        // Fast path counter
-        count_req_data[file_import.info.path] = (count_req_data[file_import.info.path] || 0) + 1;
-        
-        // Defer save to avoid blocking
-        setImmediate(count_req_save);
-        
+        ++count_req_data[file_import.info.path];
         file_import.methods[method](req, res, next);
+        count_req_save();
       });
     });
   } catch (e) {
-    console.log(`Load fail: ${file}`, e.message);
-  }
-});
-
-// Optimized root route
-app.get('/', (req, res) => {
-  res.sendFile(path.join(__dirname, "index.html"));
-});
-
-// Fast UUID redirect
-app.get('/note/:UUID?', (req, res) => {
-  const uuid = req.params.UUID;
-  if (!uuid || uuid === ':UUID') {
-    res.redirect(`/edit/${uuidv4()}`);
-  } else {
-    // Fast UUID validation
-    if (uuid.length === 36 && uuid.split('-').length === 5) {
-      res.redirect(`/edit/${uuid}`);
-    } else {
-      res.redirect(`/edit/${uuidv4()}`);
-    }
+    console.log('Load fail: ' + file);
+    console.log(e);
   }
 });
 
 // Health check endpoint
 app.get('/health', (req, res) => {
-  res.json({ 
-    status: 'healthy', 
-    timestamp: Date.now(),
-    notesCount: Object.keys(count_req_data).length 
+  res.json({
+    status: 'healthy',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    memory: process.memoryUsage(),
+    notesCount: fs.existsSync('./note') ? fs.readdirSync('./note').filter(f => f.endsWith('.txt')).length : 0
   });
 });
 
-const PORT = process.env.PORT || 4000;
+// API info endpoint
+app.get('/api', (req, res) => {
+  res.json({
+    service: 'API GHICHU',
+    version: '2.0.0',
+    endpoints: api,
+    stats: {
+      totalRequests: Object.values(count_req_data).reduce((a, b) => a + b, 0),
+      endpointStats: count_req_data
+    }
+  });
+});
 
-// Optimized server startup
+// Main page
+app.get('/', (req, res) => res.sendFile(path.join(__dirname, "index.html")));
+
+// Redirect root to new note
+app.get('/:uuid?', (req, res, next) => {
+  const uuid = req.params.uuid;
+  
+  // If no UUID provided, redirect to new note
+  if (!uuid) {
+    const { v4: uuidv4 } = require('uuid');
+    return res.redirect(`/${uuidv4()}`);
+  }
+  
+  // Let the note API handle valid UUIDs
+  next();
+});
+
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
-  console.log(`🚀 Server started on port ${PORT}`);
-  console.log(`📝 Optimized note service ready`);
-  console.log(`⚡ Performance mode: MAXIMUM`);
+  console.log(`🚀 API GHICHU Server started on port ${PORT}`);
+  console.log(`📝 Note auto-cleanup: Enabled (7 days)`);
+  console.log(`🔗 Access the service: http://localhost:${PORT}`);
 });
